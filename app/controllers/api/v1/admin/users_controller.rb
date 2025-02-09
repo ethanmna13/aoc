@@ -1,7 +1,7 @@
 class Api::V1::Admin::UsersController < ApplicationController
-  #  before_action :authenticate_api_v1_user!
-  #  before_action :authorize_admin!
   before_action :set_user, only: [ :update, :destroy ]
+  skip_before_action :verify_authenticity_token
+  respond_to :json
 
   def index
     users = User.select(:id, :name, :role, :account_status)
@@ -57,6 +57,6 @@ class Api::V1::Admin::UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit%i(:name, :role, :account_status)
+    params.require(:user).permit(:email, :name, :role, :account_status)
   end
 end

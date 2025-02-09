@@ -99,8 +99,68 @@ const AdminUsersPage = () => {
   return (
     <div>
       <PageTitle>Admin - Manage Users</PageTitle>
+      <Button onClick={() => setRegisterUser({ name: "", email: "", role: 2, account_status: 1 })}> Register </Button>
       {error && <Text>{error}</Text>}
       <ListTable headers={headers} rows={userRows}></ListTable>
+
+      {/* Register User Modal */}
+      {registerUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">Register User</h2>
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-600">Name</label>
+              <input
+                type="text"
+                value={registerUser.name}
+                onChange={(e) =>
+                  setRegisterUser({ ...registerUser, name: e.target.value })
+                }
+                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-600">Email</label>
+              <input
+                type="email"
+                value={registerUser.email}
+                onChange={(e) =>
+                  setRegisterUser({ ...registerUser, email: e.target.value })
+                }
+                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-600">Role</label>
+              <select
+                value={registerUser.role}
+                onChange={(e) =>
+                  setRegisterUser({ ...registerUser, role: Number(e.target.value) })
+                }
+                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={0}>Admin</option>
+                <option value={1}>Mentor</option>
+                <option value={2}>Mentee</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRegister}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              >
+                Register
+              </button>
+              <button
+                onClick={() => setRegisterUser(null)}
+                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {editUser && (
@@ -189,6 +249,7 @@ const AdminUsersPage = () => {
           </div>
         </div>
       )}
+      
     </div>
   );
 };
