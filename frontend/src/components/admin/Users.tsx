@@ -1,11 +1,11 @@
 import { ListTable, PageTitle, TableHeader, Text, Button } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import NavBar from "../navigation/NavBar";
 
 const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
   { value: 'Name', ordering: 'asc' },
-  { value: 'Email' },
   { value: 'Role' },
   { value: 'Account Status' },
   { value: 'Actions', alignRight: true }
@@ -25,8 +25,16 @@ const AdminUsersPage = () => {
   const [editUser, setEditUser] = useState<Users | null>(null);
   const [deleteUser, setDeleteUser] = useState<Users | null>(null);
   const [registerUser, setRegisterUser] = useState<Users | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ name: string; role: number } | null>(null); // Role is now a number
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (user) {
+      setCurrentUser({
+        name: user.name,
+        role: Number(user.role),
+      });
+    }
     fetchUsers();
   }, []);
 
@@ -35,7 +43,7 @@ const AdminUsersPage = () => {
       const response = await axios.get("http://localhost:3000/api/v1/admin/users", {
         withCredentials: true,
       });
-      setUsers(response.data); 
+      setUsers(response.data);
     } catch (err) {
       setError("Failed to fetch users");
     }
@@ -64,6 +72,7 @@ const AdminUsersPage = () => {
       setError("Failed to update user");
     }
   };
+
   const handleDelete = async () => {
     if (!deleteUser) return;
     try {
@@ -76,21 +85,21 @@ const AdminUsersPage = () => {
       setError("Failed to delete user");
     }
   };
-  const userValues = Object.values(users)
+
+  const userValues = Object.values(users);
   const userRows = userValues.map(user => ({
     cells: [
       { value: user.id },
       { value: user.name },
-      { value: user.email },
-      { value: user.role === 0 ? "Admin" : user.role === 1 ? "Mentor" : "Mentee" },
+      { value: user.role },
       { value: user.account_status === 0 ? "Inactive" : "Active" },
-      { 
+      {
         value: (
           <div className="flex space-x-2">
             <Button onClick={() => setEditUser(user)} small> Edit </Button>
             <Button onClick={() => setDeleteUser(user)} small danger> Delete </Button>
           </div>
-        ), 
+        ),
         alignRight: true
       }
     ],
@@ -98,6 +107,8 @@ const AdminUsersPage = () => {
 
   return (
     <div>
+      <NavBar name={currentUser?.name || "Admin Name"} role={0} />
+
       <PageTitle>Admin - Manage Users</PageTitle>
       <Button onClick={() => setRegisterUser({ name: "", email: "", role: 2, account_status: 1 })}> Register </Button>
       {error && <Text>{error}</Text>}
@@ -249,10 +260,8 @@ const AdminUsersPage = () => {
           </div>
         </div>
       )}
-      
     </div>
   );
 };
 
 export default AdminUsersPage;
-
