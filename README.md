@@ -1,7 +1,8 @@
 # README
 
-SETUP
-Prerequisites:
+## Setup
+
+**Prerequisites:**
 
 Ruby
 Rails
@@ -9,13 +10,14 @@ Node
 NPM / Yarn
 
 Install backend dependencies:
-"bundle install"
+`bundle install`
 
 Run api
-"rails s"
+`rails s`
 
 Install frontend dependencies:
-"cd "frontend"
-"npm install"
+`cd frontend`
+`npm install`
+
 Run frontend server:
-"npm run dev"
+`npm run dev`
