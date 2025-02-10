@@ -1,7 +1,8 @@
-import { ListTable, PageTitle, TableHeader, Text, Button } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Text, Button, FormControlLabel, TextField, Paragraph } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
+import { Form } from "react-router-dom";
 
 const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
@@ -18,6 +19,7 @@ interface Users {
   role: number;
   account_status: number;
 }
+
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState<Users[]>([]);
@@ -118,31 +120,29 @@ const AdminUsersPage = () => {
       {registerUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Register User</h2>
+            <PageTitle>Register User</PageTitle>
             <div className="mb-4">
-              <label className="block mb-1 text-gray-600">Name</label>
-              <input
+              <FormControlLabel>Name</FormControlLabel>
+              <TextField
                 type="text"
                 value={registerUser.name}
                 onChange={(e) =>
                   setRegisterUser({ ...registerUser, name: e.target.value })
                 }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="mb-4">
-              <label className="block mb-1 text-gray-600">Email</label>
-              <input
+              <FormControlLabel>Email</FormControlLabel>
+              <TextField
                 type="email"
                 value={registerUser.email}
                 onChange={(e) =>
                   setRegisterUser({ ...registerUser, email: e.target.value })
                 }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="mb-4">
-              <label className="block mb-1 text-gray-600">Role</label>
+              <FormControlLabel>Role</FormControlLabel>
               <select
                 value={registerUser.role}
                 onChange={(e) =>
@@ -154,20 +154,20 @@ const AdminUsersPage = () => {
                 <option value={1}>Mentor</option>
                 <option value={2}>Mentee</option>
               </select>
+              <FormControlLabel>Role</FormControlLabel>
+              
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={handleRegister}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Register
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setRegisterUser(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -177,9 +177,9 @@ const AdminUsersPage = () => {
       {editUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Edit User</h2>
+            <PageTitle>Edit User</PageTitle>
             <div className="mb-4">
-              <label className="block mb-1 text-gray-600">Name</label>
+              <FormControlLabel>Name</FormControlLabel>
               <input
                 type="text"
                 value={editUser.name}
@@ -190,7 +190,7 @@ const AdminUsersPage = () => {
               />
             </div>
             <div className="mb-4">
-              <label className="block mb-1 text-gray-600">Role</label>
+              <FormControlLabel>Role</FormControlLabel>
               <select
                 value={editUser.role}
                 onChange={(e) =>
@@ -204,7 +204,7 @@ const AdminUsersPage = () => {
               </select>
             </div>
             <div className="mb-4">
-              <label className="block mb-1 text-gray-600">Account Status</label>
+              <FormControlLabel>Account Status</FormControlLabel>
               <select
                 value={editUser.account_status}
                 onChange={(e) =>
@@ -220,18 +220,16 @@ const AdminUsersPage = () => {
               </select>
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={handleUpdate}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
+               >
                 Save
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setEditUser(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -241,21 +239,19 @@ const AdminUsersPage = () => {
       {deleteUser && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Confirm Delete</h2>
-            <p className="text-gray-600">Are you sure you want to delete {deleteUser.name}?</p>
+            <PageTitle>Confirm Delete</PageTitle>
+            <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
             <div className="flex gap-2 mt-4">
-              <button
+              <Button
                 onClick={handleDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
               >
                 Delete
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setDeleteUser(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>

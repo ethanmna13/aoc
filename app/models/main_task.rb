@@ -1,4 +1,4 @@
 class MainTask < ApplicationRecord
-  belongs_to :users
-  has_many :sub_tasks
+  belongs_to :user, class_name: "User", foreign_key: "users_id"
+   has_many :sub_tasks, foreign_key: "main_tasks_id"
 end

@@ -1,4 +1,4 @@
-import { Button, FormControlLabel, TextField } from "@freee_jp/vibes";
+import { Button, FormControlLabel, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
 import { useState } from "react";
 import axios from "axios";
 
@@ -35,12 +35,12 @@ const LoginPage = () => {
             src="https://likhait.com/wp-content/themes/likhait/assets/media/common/header_likhait-freee-logo.png"
             alt="Workflow"
           />
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <PageTitle>
             FreeeBoarding
-          </h2>
-          <p className="mt-3 text-center text-3xs text-gray-900">
+          </PageTitle>
+          <Paragraph>
             Sign in to your account
-          </p>
+          </Paragraph>
         </div>
             <div id="login-form">
                     <FormControlLabel htmlFor="email">Email</FormControlLabel>

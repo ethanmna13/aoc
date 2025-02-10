@@ -6,6 +6,9 @@ Rails.application.routes.draw do
       }
       namespace :admin do
         resources :users, only: [ :index, :update, :destroy, :create ]
+        resources :main_tasks, only: [ :index, :show, :create, :update, :destroy ] do
+          resources :sub_tasks, only: [ :index ]
+        end
       end
     end
   end
