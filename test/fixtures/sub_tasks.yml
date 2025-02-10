@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  authority: 1
+  name: MyString
+  description: MyString
+  duration: 2025-02-09 23:35:41
+  main_tasks: one
+  users: one
+
+two:
+  authority: 1
+  name: MyString
+  description: MyString
+  duration: 2025-02-09 23:35:41
+  main_tasks: two
+  users: two

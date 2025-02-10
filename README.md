@@ -1,24 +1,21 @@
 # README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+SETUP
+Prerequisites:
 
-Things you may want to cover:
+Ruby
+Rails
+Node
+NPM / Yarn
 
-* Ruby version
+Install backend dependencies:
+"bundle install"
 
-* System dependencies
+Run api
+"rails s"
 
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+Install frontend dependencies:
+"cd "frontend"
+"npm install"
+Run frontend server:
+"npm run dev"
