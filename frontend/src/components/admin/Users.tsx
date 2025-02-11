@@ -27,17 +27,32 @@ const AdminUsersPage = () => {
   const [editUser, setEditUser] = useState<Users | null>(null);
   const [deleteUser, setDeleteUser] = useState<Users | null>(null);
   const [registerUser, setRegisterUser] = useState<Users | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ name: string; role: number } | null>(null); // Role is now a number
+  const [currentUser, setCurrentUser] = useState<{ name: string; role: string } | null>(null); 
+  
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (user) {
-      setCurrentUser({
-        name: user.name,
-        role: Number(user.role),
-      });
-    }
-    fetchUsers();
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/v1/users/current_user", {
+          withCredentials: true, 
+        });
+
+        const user = response.data;
+
+        if (user && user.role === 'admin') {
+          console.log(user)
+          setCurrentUser(user);
+          fetchUsers(); 
+        } else {
+          window.location.href = '/unauthorized'; 
+        }
+      } catch (err) {
+        setError("Failed to fetch current user");
+      }
+    };
+
+    fetchCurrentUser();
+    
   }, []);
 
   const fetchUsers = async () => {
@@ -109,7 +124,7 @@ const AdminUsersPage = () => {
 
   return (
     <div>
-      <NavBar name={currentUser?.name || "Admin Name"} role={0} />
+      <NavBar name={currentUser?.name || "Admin Name"} role={currentUser?.role || "admin"} />
 
       <PageTitle>Admin - Manage Users</PageTitle>
       <Button onClick={() => setRegisterUser({ name: "", email: "", role: 2, account_status: 1 })}> Register </Button>
@@ -180,13 +195,12 @@ const AdminUsersPage = () => {
             <PageTitle>Edit User</PageTitle>
             <div className="mb-4">
               <FormControlLabel>Name</FormControlLabel>
-              <input
+              <TextField
                 type="text"
                 value={editUser.name}
                 onChange={(e) =>
                   setEditUser({ ...editUser, name: e.target.value })
                 }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="mb-4">

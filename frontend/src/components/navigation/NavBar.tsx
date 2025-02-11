@@ -3,7 +3,7 @@ import NavTabs from "./NavTabs";
 
 interface NavBarProps {
   name: string;
-  role: number;
+  role: string;
 }
 
 function NavBar({ name, role }: NavBarProps) {

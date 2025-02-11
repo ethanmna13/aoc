@@ -8,10 +8,10 @@
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
-User.create!([
-   { name: "Ethan", email: "mina-ethanchristian@c-fo.com", password: "1234abcd", role: 0, account_status: 1 },
-   { name: "Christian", email: "ethanchristianm@gmail.com", password: "1234abcd", role: 2, account_status: 1 },
-  { name: "Dren", email: "dren@gmail.com", password: "1234abcd", role: 1, account_status: 1 },
-  { name: "Ly", email: "ly@gmail.com", password: "1234abcd", role: 1, account_status: 1 },
- { name: "Diana", email: "diana@gmail.com", password: "1234abcd", role: 2, account_status: 1 }
- ])
+# User.create!([
+#    { name: "Ethan", email: "mina-ethanchristian@c-fo.com", password: "1234abcd", role: 0, account_status: 1 },
+#    { name: "Christian", email: "ethanchristianm@gmail.com", password: "1234abcd", role: 2, account_status: 1 },
+#   { name: "Dren", email: "dren@gmail.com", password: "1234abcd", role: 1, account_status: 1 },
+#   { name: "Ly", email: "ly@gmail.com", password: "1234abcd", role: 1, account_status: 1 },
+#  { name: "Diana", email: "diana@gmail.com", password: "1234abcd", role: 2, account_status: 1 }
+#  ])
