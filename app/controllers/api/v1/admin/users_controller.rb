@@ -1,5 +1,5 @@
 class Api::V1::Admin::UsersController < ApplicationController
-  before_action :set_user, only: [ :update, :destroy ]
+  # before_action :set_user, only: [ :update, :destroy ]
   skip_before_action :verify_authenticity_token
   respond_to :json
 

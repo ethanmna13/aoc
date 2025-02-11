@@ -21,9 +21,9 @@ function NavTabs({ role }: NavTabsProps) {
     },
     {
         title: "Onboarding Checklist",
-        url: "/admin/onboarding-checklists",
+        url: "/admin/main-tasks",
         IconComponent: MdOutlineFactCheck,
-        current: location.pathname == "/admin/onboarding-checklists" ? true : false,
+        current: location.pathname == "/admin/main-tasks" ? true : false,
     },
     {
         title: "Mentorships",
@@ -36,9 +36,9 @@ function NavTabs({ role }: NavTabsProps) {
   const mentorNavLinks = [
     {
         title: "Onboarding Checklists",
-        url: "/mentor/onboard-checklists",
+        url: "/mentor/main-tasks",
         IconComponent: MdOutlinePeopleOutline,
-        current: location.pathname == "/mentor/onboard-checklists" ? true : false,
+        current: location.pathname == "/mentor/main-tasks" ? true : false,
     },
     {
         title: "My Mentees",
