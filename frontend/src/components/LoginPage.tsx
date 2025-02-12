@@ -1,29 +1,36 @@
 import { Button, FormControlLabel, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-        const response = await axios.post('http://localhost:3000/api/v1/users/sign_in', {
-          user: {
-            email,
-            password,
-          },
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          withCredentials: true,
-        });
-  
-        if (response.status === 200) {
-          window.location.href = '/admin/users'; 
-        }
-      } catch (error: any) {
-        setError(error.response?.data?.error || error.message);
+      const response = await axios.post('http://localhost:3000/api/v1/users/sign_in', {
+        user: {
+          email,
+          password,
+        },
+      }, {
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      });
+
+      if (response.status === 200) {
+        const { token, user } = response.data;
+        console.log(token, user); 
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        navigate('/admin/users');
       }
+    } catch (error: any) {
+      setError(error.response?.data?.error || error.message);
+    }
   };
 
   return (

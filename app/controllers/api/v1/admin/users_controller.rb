@@ -1,10 +1,7 @@
 class Api::V1::Admin::UsersController < ApplicationController
   respond_to :json
   before_action :set_user, only: [ :update, :destroy ]
-  before_action :authenticate_user!, only: [ :index, :create, :update, :destroy ]
-  before_action :check_admin_role, only: [ :index, :create, :update, :destroy ]
-
-
+  # before_action :check_admin_role
 
   def index
     users = User.select(:id, :name, :role, :account_status)
@@ -25,11 +22,6 @@ class Api::V1::Admin::UsersController < ApplicationController
     else
       render json: { error: user.errors.full_messages }, status: :unprocessable_entity
     end
-  end
-
-
-  def current
-    render json: current_user.slice(:id, :name, :role, :account_status)
   end
 
 
@@ -62,7 +54,7 @@ class Api::V1::Admin::UsersController < ApplicationController
   end
 
   def check_admin_role
-    unless current_user && current_user == 0
+    unless @current_user&.admin?
       render json: { error: "Forbidden" }, status: :forbidden
     end
   end
