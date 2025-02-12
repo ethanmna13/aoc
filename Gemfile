@@ -46,6 +46,10 @@ gem "dotenv-rails"
 
 gem "rack-cors"
 
+gem "devise-jwt", "~> 0.9.0"
+
+gem "dry-configurable", "0.13.0"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -55,6 +59,11 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  gem "rspec-rails", "~> 7.0.0"
+  gem "factory_bot_rails"
+  gem "faker"
+  gem "shoulda-matchers", "~> 5.0"
 end
 
 group :development do

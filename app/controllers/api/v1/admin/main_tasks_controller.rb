@@ -1,6 +1,5 @@
 class Api::V1::Admin::MainTasksController < ApplicationController
   before_action :set_main_task, only: [ :show, :update, :destroy ]
-  skip_before_action :verify_authenticity_token
   respond_to :json
 
   def index

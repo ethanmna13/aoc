@@ -1,5 +1,6 @@
 import { Button, PageTitle, Paragraph } from "@freee_jp/vibes";
 import { useNavigate } from "react-router-dom";
+import '../../node_modules/@freee_jp/vibes/vibes_2021.css';
 
 const LandingPage = () => {
     const navigate = useNavigate();

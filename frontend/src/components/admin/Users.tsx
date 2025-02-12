@@ -2,7 +2,7 @@ import { ListTable, PageTitle, TableHeader, Text, Button, FormControlLabel, Text
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
-import { Form } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
@@ -20,30 +20,37 @@ interface Users {
   account_status: number;
 }
 
-
 const AdminUsersPage = () => {
   const [users, setUsers] = useState<Users[]>([]);
   const [error, setError] = useState<string>("");
   const [editUser, setEditUser] = useState<Users | null>(null);
   const [deleteUser, setDeleteUser] = useState<Users | null>(null);
   const [registerUser, setRegisterUser] = useState<Users | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ name: string; role: number } | null>(null); // Role is now a number
+  const [currentUser] = useState(localStorage.getItem("user") || "[]");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (user) {
-      setCurrentUser({
-        name: user.name,
-        role: Number(user.role),
-      });
-    }
-    fetchUsers();
+    const fetchCurrentUser = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError("No token found, please log in again");
+        navigate('/users/sign_in');
+        return;
+      }
+      console.log(token);
+      console.log(JSON.parse(currentUser));
+      fetchUsers();
+    };
+    fetchCurrentUser();
   }, []);
 
   const fetchUsers = async () => {
+    const token = localStorage.getItem('authToken');
     try {
       const response = await axios.get("http://localhost:3000/api/v1/admin/users", {
-        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`, 
+        },
       });
       setUsers(response.data);
     } catch (err) {
@@ -54,7 +61,12 @@ const AdminUsersPage = () => {
   const handleRegister = async () => {
     if (!registerUser) return;
     try {
-      await axios.post("http://localhost:3000/api/v1/admin/users", registerUser, { withCredentials: true });
+      const token = localStorage.getItem('authToken');
+      await axios.post("http://localhost:3000/api/v1/admin/users", registerUser, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       fetchUsers();
       setRegisterUser(null);
     } catch (err) {
@@ -65,8 +77,11 @@ const AdminUsersPage = () => {
   const handleUpdate = async () => {
     if (!editUser) return;
     try {
+      const token = localStorage.getItem('authToken'); 
       await axios.put(`http://localhost:3000/api/v1/admin/users/${editUser.id}`, editUser, {
-        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       fetchUsers();
       setEditUser(null);
@@ -78,10 +93,13 @@ const AdminUsersPage = () => {
   const handleDelete = async () => {
     if (!deleteUser) return;
     try {
+      const token = localStorage.getItem('authToken');
       await axios.delete(`http://localhost:3000/api/v1/admin/users/${deleteUser.id}`, {
-        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      fetchUsers();
+      fetchUsers(); 
       setDeleteUser(null);
     } catch (err) {
       setError("Failed to delete user");
@@ -93,7 +111,7 @@ const AdminUsersPage = () => {
     cells: [
       { value: user.id },
       { value: user.name },
-      { value: user.role },
+      { value: user.role === 0 ? "Admin" : user.role === 1 ? "Mentor" : "Mentee" },
       { value: user.account_status === 0 ? "Inactive" : "Active" },
       {
         value: (
@@ -109,7 +127,7 @@ const AdminUsersPage = () => {
 
   return (
     <div>
-      <NavBar name={currentUser?.name || "Admin Name"} role={0} />
+      <NavBar name={JSON.parse(currentUser).name || "Admin Name"} role={JSON.parse(currentUser).role || "admin"} />
 
       <PageTitle>Admin - Manage Users</PageTitle>
       <Button onClick={() => setRegisterUser({ name: "", email: "", role: 2, account_status: 1 })}> Register </Button>
@@ -154,20 +172,10 @@ const AdminUsersPage = () => {
                 <option value={1}>Mentor</option>
                 <option value={2}>Mentee</option>
               </select>
-              <FormControlLabel>Role</FormControlLabel>
-              
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={handleRegister}
-              >
-                Register
-              </Button>
-              <Button
-                onClick={() => setRegisterUser(null)}
-              >
-                Cancel
-              </Button>
+              <Button onClick={handleRegister}> Register </Button>
+              <Button onClick={() => setRegisterUser(null)}> Cancel </Button>
             </div>
           </div>
         </div>
@@ -180,13 +188,12 @@ const AdminUsersPage = () => {
             <PageTitle>Edit User</PageTitle>
             <div className="mb-4">
               <FormControlLabel>Name</FormControlLabel>
-              <input
+              <TextField
                 type="text"
                 value={editUser.name}
                 onChange={(e) =>
                   setEditUser({ ...editUser, name: e.target.value })
                 }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="mb-4">
@@ -208,10 +215,7 @@ const AdminUsersPage = () => {
               <select
                 value={editUser.account_status}
                 onChange={(e) =>
-                  setEditUser({
-                    ...editUser,
-                    account_status: Number(e.target.value),
-                  })
+                  setEditUser({ ...editUser, account_status: Number(e.target.value) })
                 }
                 className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
               >
@@ -220,16 +224,8 @@ const AdminUsersPage = () => {
               </select>
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={handleUpdate}
-               >
-                Save
-              </Button>
-              <Button
-                onClick={() => setEditUser(null)}
-              >
-                Cancel
-              </Button>
+              <Button onClick={handleUpdate}> Save </Button>
+              <Button onClick={() => setEditUser(null)}> Cancel </Button>
             </div>
           </div>
         </div>
@@ -242,16 +238,8 @@ const AdminUsersPage = () => {
             <PageTitle>Confirm Delete</PageTitle>
             <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
             <div className="flex gap-2 mt-4">
-              <Button
-                onClick={handleDelete}
-              >
-                Delete
-              </Button>
-              <Button
-                onClick={() => setDeleteUser(null)}
-              >
-                Cancel
-              </Button>
+              <Button onClick={handleDelete}> Delete </Button>
+              <Button onClick={() => setDeleteUser(null)}> Cancel </Button>
             </div>
           </div>
         </div>

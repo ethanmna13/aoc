@@ -1,22 +1,14 @@
 class Api::V1::Admin::UsersController < ApplicationController
-  # before_action :set_user, only: [ :update, :destroy ]
-  skip_before_action :verify_authenticity_token
   respond_to :json
+  before_action :set_user, only: [ :update, :destroy ]
+  # before_action :check_admin_role
 
   def index
     users = User.select(:id, :name, :role, :account_status)
     if users.empty?
       render json: { message: "No users found" }
     else
-    render json: users
-    end
-  end
-
-  def current
-    if current_user
-      render json: current_user.slice(:id, :name, :role, :account_status)
-    else
-      render json: { error: "Not logged in" }, status: :unauthorized
+      render json: users
     end
   end
 
@@ -31,6 +23,7 @@ class Api::V1::Admin::UsersController < ApplicationController
       render json: { error: user.errors.full_messages }, status: :unprocessable_entity
     end
   end
+
 
   def update
     if @user.update(user_params)
@@ -58,5 +51,11 @@ class Api::V1::Admin::UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:email, :name, :role, :account_status)
+  end
+
+  def check_admin_role
+    unless @current_user&.admin?
+      render json: { error: "Forbidden" }, status: :forbidden
+    end
   end
 end

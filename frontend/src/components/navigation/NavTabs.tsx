@@ -5,7 +5,7 @@ import { GlobalNavi } from "@freee_jp/vibes";
 import { useLocation } from "react-router";
 
 interface NavTabsProps {
-  role: number;
+  role: string;
 }
 
 function NavTabs({ role }: NavTabsProps) {
@@ -65,9 +65,9 @@ function NavTabs({ role }: NavTabsProps) {
 
   let navLinks;
 
-  if (role == 1) navLinks = mentorNavLinks;
-  if (role == 2) navLinks = menteeNavLinks;
-  if (role == 0) navLinks = adminNavLinks;
+  if (role == "mentor") navLinks = mentorNavLinks;
+  if (role == "mentee") navLinks = menteeNavLinks;
+  if (role == "admin") navLinks = adminNavLinks;
 
 
   return <GlobalNavi hideHelpForm links={navLinks} />;
