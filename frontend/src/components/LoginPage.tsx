@@ -26,6 +26,7 @@ const LoginPage = () => {
         console.log(token, user); 
         localStorage.setItem('authToken', token);
         localStorage.setItem('user', JSON.stringify(user));
+        
         navigate('/admin/users');
       }
     } catch (error: any) {
