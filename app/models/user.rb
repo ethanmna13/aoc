@@ -2,6 +2,7 @@ class User < ApplicationRecord
   include Devise::JWT::RevocationStrategies::JTIMatcher
   enum :role, { admin: 0, mentor: 1, mentee: 2 }
   enum :account_status, { inactive: 0, active: 1 }
+  validates :role, presence: true
   has_many :mentorships
   has_many :main_tasks, foreign_key: "users_id"
   has_many :sub_tasks, foreign_key: "users_id"
