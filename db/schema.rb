@@ -10,7 +10,35 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_11_133252) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_13_054612) do
+  create_table "assigned_main_tasks", force: :cascade do |t|
+    t.integer "mentorships_id", null: false
+    t.integer "main_task_id"
+    t.string "main_task_name"
+    t.string "main_task_status"
+    t.datetime "main_task_assign_date"
+    t.string "edited_by"
+    t.string "completed_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mentorships_id"], name: "index_assigned_main_tasks_on_mentorships_id"
+  end
+
+  create_table "assigned_sub_tasks", force: :cascade do |t|
+    t.integer "mentorships_id", null: false
+    t.integer "sub_task_id"
+    t.string "sub_task_name"
+    t.string "sub_task_status"
+    t.datetime "sub_task_assign_date"
+    t.integer "assigned_main_tasks_id", null: false
+    t.string "edited_by"
+    t.string "completed_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_main_tasks_id"], name: "index_assigned_sub_tasks_on_assigned_main_tasks_id"
+    t.index ["mentorships_id"], name: "index_assigned_sub_tasks_on_mentorships_id"
+  end
+
   create_table "main_tasks", force: :cascade do |t|
     t.string "name"
     t.string "description"
@@ -19,6 +47,34 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_11_133252) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["users_id"], name: "index_main_tasks_on_users_id"
+  end
+
+  create_table "mentees", force: :cascade do |t|
+    t.integer "users_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["users_id"], name: "index_mentees_on_users_id"
+  end
+
+  create_table "mentors", force: :cascade do |t|
+    t.integer "users_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["users_id"], name: "index_mentors_on_users_id"
+  end
+
+  create_table "mentorships", force: :cascade do |t|
+    t.integer "mentors_id", null: false
+    t.integer "mentees_id", null: false
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "main_tasks_id", null: false
+    t.integer "sub_tasks_id", null: false
+    t.index ["main_tasks_id"], name: "index_mentorships_on_main_tasks_id"
+    t.index ["mentees_id"], name: "index_mentorships_on_mentees_id"
+    t.index ["mentors_id"], name: "index_mentorships_on_mentors_id"
+    t.index ["sub_tasks_id"], name: "index_mentorships_on_sub_tasks_id"
   end
 
   create_table "sub_tasks", force: :cascade do |t|
@@ -51,7 +107,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_11_133252) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "assigned_main_tasks", "mentorships", column: "mentorships_id"
+  add_foreign_key "assigned_sub_tasks", "assigned_main_tasks", column: "assigned_main_tasks_id"
+  add_foreign_key "assigned_sub_tasks", "mentorships", column: "mentorships_id"
   add_foreign_key "main_tasks", "users", column: "users_id"
+  add_foreign_key "mentees", "users", column: "users_id"
+  add_foreign_key "mentors", "users", column: "users_id"
+  add_foreign_key "mentorships", "main_tasks", column: "main_tasks_id"
+  add_foreign_key "mentorships", "mentees", column: "mentees_id"
+  add_foreign_key "mentorships", "mentors", column: "mentors_id"
+  add_foreign_key "mentorships", "sub_tasks", column: "sub_tasks_id"
   add_foreign_key "sub_tasks", "main_tasks", column: "main_tasks_id"
   add_foreign_key "sub_tasks", "users", column: "users_id"
 end
