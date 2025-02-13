@@ -54,7 +54,7 @@ class Api::V1::Admin::UsersController < ApplicationController
   end
 
   def user_update_params
-    params.require(:user).permit(:name, :role, :account_status)
+    params.require(:user).permit(%i[name role account_status])
   end
 
   def check_admin_role
