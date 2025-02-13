@@ -111,7 +111,7 @@ const AdminUsersPage = () => {
     cells: [
       { value: user.id },
       { value: user.name },
-      { value: user.role === 0 ? "Admin" : user.role === 1 ? "Mentor" : "Mentee" },
+      { value: user.role },
       { value: user.account_status === 0 ? "Inactive" : "Active" },
       {
         value: (
