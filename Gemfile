@@ -46,7 +46,7 @@ gem "dotenv-rails"
 
 gem "rack-cors"
 
-gem "devise-jwt", "~> 0.9.0"
+gem "devise-jwt", "~> 0.12.1"
 
 gem "dry-configurable", "0.13.0"
 
