@@ -121,7 +121,6 @@ const MentorshipPage = () => {
                 <CardBase>
                     <ListTable headers={menteeHeaders} rows={menteeRows}></ListTable>
                 </CardBase>
-
             </Container>
             </div>
         )
