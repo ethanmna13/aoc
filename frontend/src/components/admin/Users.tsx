@@ -32,11 +32,14 @@ const AdminUsersPage = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const token = localStorage.getItem('authToken');
-      if (!token) {
+      if (!token ) {
         setError("No token found, please log in again");
         navigate('/users/sign_in');
         return;
-      }
+      } else if (JSON.parse(currentUser).role == "mentor" || JSON.parse(currentUser).role == "mentee"){ 
+        setError("Unauthorized")
+        navigate('/unauthorized')
+      } else
       console.log(token);
       console.log(JSON.parse(currentUser));
       fetchUsers();

@@ -26,7 +26,7 @@ class Api::V1::Admin::UsersController < ApplicationController
 
 
   def update
-    if @user.update(user_params)
+    if @user.update(user_update_params)
       render json: @user.slice(:id, :name, :role, :account_status)
     else
       render json: { error: @user.errors.full_messages }, status: :unprocessable_entity
@@ -51,6 +51,10 @@ class Api::V1::Admin::UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:email, :name, :role, :account_status)
+  end
+
+  def user_update_params
+    params.require(:user).permit(:name, :role, :account_status)
   end
 
   def check_admin_role
