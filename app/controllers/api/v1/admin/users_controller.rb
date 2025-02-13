@@ -50,7 +50,7 @@ class Api::V1::Admin::UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:email, :name, :role, :account_status)
+    params.require(:user).permit(%i[email name role account_status])
   end
 
   def user_update_params
