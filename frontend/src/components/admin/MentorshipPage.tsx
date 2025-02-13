@@ -1,35 +1,44 @@
-import { CardBase, Container, ListTable, PageTitle, Paragraph, TableHeader } from "@freee_jp/vibes";
+import { Button, CardBase, Container, DropdownButton, FormControl, FullScreenModal, ListTable, PageTitle, Paragraph, SelectBox, TableHeader } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import React from "react";
 
 interface Mentors {
-  id?: number;
-  name: string;
-  email: string;
+    id?: number;
+    name: string;
+    email: string;
 }
 
 interface Mentees {
     id?: number;
     name: string;
     email: string;
-  }
+}
+
+interface Mentorships {
+    id?: number;
+    mentor: string;
+    mentee: string;
+    assignedMainTask: string;
+    status: string;
+}
 
 const mentorHeaders: TableHeader[] = [
-  { value: 'ID', ordering: 'asc' },
+  { value: 'User ID', ordering: 'asc' },
   { value: 'Mentor Name', ordering: 'asc' },
   { value: 'Email' }
 ];
 
 const menteeHeaders: TableHeader[] = [
-  { value: 'ID', ordering: 'asc' },
+  { value: 'User ID', ordering: 'asc' },
   { value: 'Mentee Name', ordering: 'asc' },
-  { value: 'Actions', alignRight: true }
+  { value: 'Email' }
 ];
 
 const mentorshipHeaders: TableHeader[] = [
-  { value: 'ID', ordering: 'asc' },
+  { value: 'Mentorship ID', ordering: 'asc' },
   { value: 'Mentor' },
   { value: 'Mentee' },
   { value: 'Assigned Main Tasks' },
@@ -47,6 +56,9 @@ const MentorshipPage = () => {
     const navigate = useNavigate();
     const [mentors, setMentors] = useState<Mentors[]>([]);
     const [mentee, setMentees] = useState<Mentees[]>([]);
+    const [isOpen, setOpen] = React.useState<boolean>(false);
+    const toggle = () => setOpen(!isOpen);
+    const options = ['Main Task 1', 'Main Task 2'];
 
     useEffect(() => {
         const fetchCurrentUser = async () => {
@@ -121,7 +133,38 @@ const MentorshipPage = () => {
                 <CardBase>
                     <ListTable headers={menteeHeaders} rows={menteeRows}></ListTable>
                 </CardBase>
-
+                <PageTitle mt={1} ml={1} >Mentorships</PageTitle>
+                <Button  mb={1} ml={1} onClick={toggle}>Create</Button>
+                <FullScreenModal isOpen={isOpen} title={"Create a Mentorship"} onRequestClose={toggle}>
+                    <FormControl label="Select a Mentor" fieldId="selectBox-1">
+                        <SelectBox id="selectBox-1" name="selectBox" options={[
+                            {
+                                name: 'Mentor Name',
+                                value: 'Sample'
+                            }
+                        ]}
+                        marginRight/>
+                    </FormControl>
+                    <FormControl label="Select a Mentee" fieldId="selectBox-1">
+                        <SelectBox id="selectBox-1" name="selectBox" options={[
+                            {
+                                name: 'Mentee Name',
+                                value: 'Sample'
+                            }
+                        ]}
+                        marginRight/>
+                    </FormControl>
+                    <FormControl label="Assign a Main Task" fieldId="selectBox-1">
+                        <DropdownButton buttonLabel="eyyy" dropdownContents={options.map((opt, idx) => ({
+                            type: 'checkbox',
+                            text: opt,
+                            
+                        }))}/>
+                    </FormControl>
+                </FullScreenModal>
+                <CardBase>
+                    <ListTable headers={menteeHeaders} rows={menteeRows}></ListTable>
+                </CardBase>
             </Container>
             </div>
         )

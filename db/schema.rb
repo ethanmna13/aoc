@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_13_054612) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_13_082005) do
   create_table "assigned_main_tasks", force: :cascade do |t|
     t.integer "mentorships_id", null: false
     t.integer "main_task_id"
@@ -66,7 +66,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_13_054612) do
   create_table "mentorships", force: :cascade do |t|
     t.integer "mentors_id", null: false
     t.integer "mentees_id", null: false
-    t.string "status"
+    t.string "status", default: "Pending"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "main_tasks_id", null: false
