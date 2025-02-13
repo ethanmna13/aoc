@@ -8,6 +8,11 @@ class User < ApplicationRecord
   has_many :sub_tasks, foreign_key: "users_id"
   has_one :mentor, foreign_key: "users_id"
   has_one :mentee, foreign_key: "users_id"
+
+  scope :admins, -> { where(role: "admin") }
+  scope :mentors, -> { where(role: "mentor") }
+  scope :mentees, -> { where(role: "mentee") }
+
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
@@ -15,10 +20,6 @@ class User < ApplicationRecord
          :jwt_authenticatable, jwt_revocation_strategy: self
 
   before_save :initialize_jti
-
-  def admin?
-    role == "admin"
-  end
 
   def initialize_jti
     self.jti ||= SecureRandom.uuid
