@@ -1,7 +1,7 @@
 class Api::V1::Admin::UsersController < ApplicationController
   respond_to :json
   before_action :set_user, only: [ :update, :destroy ]
-  # before_action :check_admin_role
+  # before_action :check_admin_role, only: [ :create, :update, :destroy ]
 
   def index
     users = User.select(:id, :name, :role, :account_status)
@@ -54,7 +54,7 @@ class Api::V1::Admin::UsersController < ApplicationController
   end
 
   def check_admin_role
-    unless @current_user&.admin?
+    unless current_user&.admin?
       render json: { error: "Forbidden" }, status: :forbidden
     end
   end

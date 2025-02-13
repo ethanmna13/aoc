@@ -27,9 +27,9 @@ function NavTabs({ role }: NavTabsProps) {
     },
     {
         title: "Mentorships",
-        url: "/admin/mentorship",
+        url: "/admin/mentorships",
         IconComponent: MdSupervisedUserCircle,
-        current: location.pathname == "/admin/mentorship" ? true : false,
+        current: location.pathname == "/admin/mentorships" ? true : false,
     },
   ];
 
@@ -44,22 +44,22 @@ function NavTabs({ role }: NavTabsProps) {
         title: "My Mentees",
         url: "/mentor/view-mentees",
         IconComponent: MdOutlinePeopleOutline,
-        current: location.pathname == "/mentor/mentees" ? true : false,
-    }
+        current: location.pathname == "/mentor/view-mentees" ? true : false,
+    },
+    {
+      title: "To Do Page",
+      url: "/mentor/TODO",
+      IconComponent: MdOutlinePeopleOutline,
+      current: location.pathname == "/mentor/TODO" ? true : false,
+  }
   ];
 
   const menteeNavLinks = [
     {
-        title: "My Mentors",
-        url: "/mentee/view-mentors",
-        IconComponent: MdOutlinePeopleOutline,
-        current: location.pathname == "/mentee/view-mentors" ? true : false,
-    },
-    {
         title: "To DO",
-        url: "/todos",
+        url: "/mentee/TODO",
         IconComponent: MdOutlinePeopleOutline,
-        current: location.pathname == "/todos" ? true : false,
+        current: location.pathname == "/mentee/TODO" ? true : false,
     }
   ];
 

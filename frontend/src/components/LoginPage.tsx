@@ -26,8 +26,15 @@ const LoginPage = () => {
         console.log(token, user); 
         localStorage.setItem('authToken', token);
         localStorage.setItem('user', JSON.stringify(user));
-        
-        navigate('/admin/users');
+        if (user.role == "admin"){ 
+          navigate('/admin/users');
+        } else if (user.role == "mentor"){
+          navigate('/mentor/main-tasks')
+        } else if (user.role == "mentee"){
+          navigate('/mentee/TODO')
+        } else {
+          navigate('/unauthorized')
+        }
       }
     } catch (error: any) {
       setError(error.response?.data?.error || error.message);
