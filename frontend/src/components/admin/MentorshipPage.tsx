@@ -1,7 +1,29 @@
-import { Container, PageTitle, Paragraph } from "@freee_jp/vibes";
+import { Container, PageTitle, Paragraph, TableHeader } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+const mentorHeaders: TableHeader[] = [
+  { value: 'ID', ordering: 'asc' },
+  { value: 'Mentor Name', ordering: 'asc' },
+  { value: 'Actions', alignRight: true }
+];
+
+const menteeHeaders: TableHeader[] = [
+  { value: 'ID', ordering: 'asc' },
+  { value: 'Mentee Name', ordering: 'asc' },
+  { value: 'Actions', alignRight: true }
+];
+
+const mentorshipHeaders: TableHeader[] = [
+  { value: 'ID', ordering: 'asc' },
+  { value: 'Mentor' },
+  { value: 'Mentee' },
+  { value: 'Assigned Main Tasks' },
+  { value: 'Status' },
+  { value: 'Submissions' },
+  { value: 'Actions', alignRight: true }
+];
 
 
 
