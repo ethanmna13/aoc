@@ -1,15 +1,16 @@
-import { ListTable, PageTitle, TableHeader, Text, Button, FormControlLabel, TextField, Paragraph } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Text, Button, FormControlLabel, TextField, Paragraph, Container, CardBase, FullScreenModal, FormControl, SelectBox, DropdownButton } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
 import { useNavigate } from "react-router-dom";
+import React from "react";
 
 const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
   { value: 'Name', ordering: 'asc' },
-  { value: 'Role' },
-  { value: 'Account Status' },
-  { value: 'Actions', alignRight: true }
+  { value: 'Role', alignCenter: true },
+  { value: 'Account Status', alignCenter: true },
+  { value: 'Actions', alignCenter: true }
 ];
 
 interface Users {
@@ -25,34 +26,42 @@ const AdminUsersPage = () => {
   const [error, setError] = useState<string>("");
   const [editUser, setEditUser] = useState<Users | null>(null);
   const [deleteUser, setDeleteUser] = useState<Users | null>(null);
-  const [registerUser, setRegisterUser] = useState<Users | null>(null);
+  const [registerUser, setRegisterUser] = useState<Users>({
+    name: '',
+    email: '',
+    role: 0,
+    account_status: 0,
+  });
   const [currentUser] = useState(localStorage.getItem("user") || "[]");
   const navigate = useNavigate();
+  const [isOpen, setOpen] = React.useState<boolean>(false);
+  const toggle = () => setOpen(!isOpen);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const token = localStorage.getItem('authToken');
-      if (!token ) {
+      if (!token) {
         setError("No token found, please log in again");
         navigate('/users/sign_in');
         return;
-      } else if (JSON.parse(currentUser).role == "mentor" || JSON.parse(currentUser).role == "mentee"){ 
-        setError("Unauthorized")
-        navigate('/unauthorized')
-      } else
-      console.log(token);
-      console.log(JSON.parse(currentUser));
-      fetchUsers();
+      } else if (JSON.parse(currentUser).role === "mentor" || JSON.parse(currentUser).role === "mentee") {
+        setError("Unauthorized");
+        navigate('/unauthorized');
+      } else {
+        console.log(token);
+        console.log(JSON.parse(currentUser));
+        fetchUsers();
+      }
     };
     fetchCurrentUser();
-  }, []);
+  }, [currentUser, navigate]);
 
   const fetchUsers = async () => {
     const token = localStorage.getItem('authToken');
     try {
       const response = await axios.get("http://localhost:3000/api/v1/admin/users", {
         headers: {
-          Authorization: `Bearer ${token}`, 
+          Authorization: `Bearer ${token}`,
         },
       });
       setUsers(response.data);
@@ -62,7 +71,6 @@ const AdminUsersPage = () => {
   };
 
   const handleRegister = async () => {
-    if (!registerUser) return;
     try {
       const token = localStorage.getItem('authToken');
       await axios.post("http://localhost:3000/api/v1/admin/users", registerUser, {
@@ -71,7 +79,13 @@ const AdminUsersPage = () => {
         },
       });
       fetchUsers();
-      setRegisterUser(null);
+      setRegisterUser({
+        name: '',
+        email: '',
+        role: 0,
+        account_status: 0,
+      });
+      toggle();
     } catch (err) {
       setError("Failed to register user");
     }
@@ -80,7 +94,7 @@ const AdminUsersPage = () => {
   const handleUpdate = async () => {
     if (!editUser) return;
     try {
-      const token = localStorage.getItem('authToken'); 
+      const token = localStorage.getItem('authToken');
       await axios.put(`http://localhost:3000/api/v1/admin/users/${editUser.id}`, editUser, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -102,7 +116,7 @@ const AdminUsersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers(); 
+      fetchUsers();
       setDeleteUser(null);
     } catch (err) {
       setError("Failed to delete user");
@@ -114,16 +128,16 @@ const AdminUsersPage = () => {
     cells: [
       { value: user.id },
       { value: user.name },
-      { value: user.role },
-      { value: user.account_status === 0 ? "Inactive" : "Active" },
+      { value: user.role, alignCenter: true },
+      { value: user.account_status === 0 ? "Inactive" : "Active", alignCenter: true },
       {
         value: (
-          <div className="flex space-x-2">
-            <Button onClick={() => setEditUser(user)} small> Edit </Button>
-            <Button onClick={() => setDeleteUser(user)} small danger> Delete </Button>
+          <div>
+            <Button onClick={() => setEditUser(user)} small appearance="secondary" mr={0.5}> Edit </Button>
+            <Button onClick={() => setDeleteUser(user)} small danger appearance="secondary"> Delete </Button>
           </div>
         ),
-        alignRight: true
+        alignCenter: true
       }
     ],
   }));
@@ -131,66 +145,64 @@ const AdminUsersPage = () => {
   return (
     <div>
       <NavBar name={JSON.parse(currentUser).name || "Admin Name"} role={JSON.parse(currentUser).role || "admin"} />
+      <Container>
+        <PageTitle mt={1}>Admin - Manage Users</PageTitle>
+        <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
+        {error && <Text>{error}</Text>}
+        <CardBase>
+          <ListTable headers={headers} rows={userRows}></ListTable>
+        </CardBase>
 
-      <PageTitle>Admin - Manage Users</PageTitle>
-      <Button onClick={() => setRegisterUser({ name: "", email: "", role: 2, account_status: 1 })}> Register </Button>
-      {error && <Text>{error}</Text>}
-      <ListTable headers={headers} rows={userRows}></ListTable>
-
-      {/* Register User Modal */}
-      {registerUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <PageTitle>Register User</PageTitle>
-            <div className="mb-4">
-              <FormControlLabel>Name</FormControlLabel>
-              <TextField
-                type="text"
-                value={registerUser.name}
-                onChange={(e) =>
-                  setRegisterUser({ ...registerUser, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Email</FormControlLabel>
-              <TextField
-                type="email"
-                value={registerUser.email}
-                onChange={(e) =>
-                  setRegisterUser({ ...registerUser, email: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Role</FormControlLabel>
-              <select
-                value={registerUser.role}
-                onChange={(e) =>
-                  setRegisterUser({ ...registerUser, role: Number(e.target.value) })
-                }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={0}>Admin</option>
-                <option value={1}>Mentor</option>
-                <option value={2}>Mentee</option>
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleRegister}> Register </Button>
-              <Button onClick={() => setRegisterUser(null)}> Cancel </Button>
-            </div>
+        {/* Register User Modal */}
+        <FullScreenModal isOpen={isOpen} title={"Register A User"} onRequestClose={toggle}>
+          <FormControl label="Name" fieldId="name">
+            <TextField
+              type="text"
+              value={registerUser.name || ""}
+              onChange={(e) =>
+                setRegisterUser({ ...registerUser, name: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Email" fieldId="email">
+            <TextField
+              type="email"
+              value={registerUser.email || ""}
+              onChange={(e) =>
+                setRegisterUser({ ...registerUser, email: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Role" fieldId="role">
+            <SelectBox
+              id="role"
+              name="role"
+              options={[
+                { name: 'Admin', value: '0' }, 
+                { name: 'Mentor', value: '1' }, 
+                { name: 'Mentee', value: '2' } 
+              ]}
+              onChange={(e) => setRegisterUser({ ...registerUser, role: Number(e.target.value) })}
+            />
+          </FormControl>
+          <div className="flex gap-2">
+            <Button onClick={handleRegister} mt={0.5} mr={0.5} appearance="primary"> Register </Button>
+            <Button onClick={() => {
+              setRegisterUser({
+                name: '',
+                email: '',
+                role: 0,
+                account_status: 0,
+              });
+              toggle();
+            }} mt={0.5} mr={0.5} appearance="primary" danger> Cancel </Button>
           </div>
-        </div>
-      )}
+        </FullScreenModal>
 
-      {/* Edit User Modal */}
-      {editUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <PageTitle>Edit User</PageTitle>
-            <div className="mb-4">
-              <FormControlLabel>Name</FormControlLabel>
+        {/* Edit User Modal */}
+        {editUser && (
+          <FullScreenModal isOpen={Boolean(editUser)} title={"Edit User"} onRequestClose={() => setEditUser(null)}>
+            <FormControl label="Name" fieldId="edit-name">
               <TextField
                 type="text"
                 value={editUser.name}
@@ -198,55 +210,48 @@ const AdminUsersPage = () => {
                   setEditUser({ ...editUser, name: e.target.value })
                 }
               />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Role</FormControlLabel>
-              <select
-                value={editUser.role}
-                onChange={(e) =>
-                  setEditUser({ ...editUser, role: Number(e.target.value) })
-                }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={0}>Admin</option>
-                <option value={1}>Mentor</option>
-                <option value={2}>Mentee</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Account Status</FormControlLabel>
-              <select
-                value={editUser.account_status}
-                onChange={(e) =>
-                  setEditUser({ ...editUser, account_status: Number(e.target.value) })
-                }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={0}>Inactive</option>
-                <option value={1}>Active</option>
-              </select>
-            </div>
+            </FormControl>
+            <FormControl label="Role" fieldId="edit-role">
+              <SelectBox
+                id="edit-role"
+                name="role"
+                options={[
+                  { name: 'Admin', value: '0' }, 
+                  { name: 'Mentor', value: '1' }, 
+                  { name: 'Mentee', value: '2' } 
+                ]}
+                onChange={(e) => setEditUser({ ...editUser, role: Number(e.target.value) })}
+              />
+            </FormControl>
+            <FormControl label="Account Status" fieldId="edit-status">
+              <SelectBox
+                id="edit-status"
+                name="status"
+                options={[
+                  { name: 'Inactive', value: '0' },
+                  { name: 'Active', value: '1' } 
+                ]}
+                onChange={(e) => setEditUser({ ...editUser, account_status: Number(e.target.value) })}
+              />
+            </FormControl>
             <div className="flex gap-2">
-              <Button onClick={handleUpdate}> Save </Button>
-              <Button onClick={() => setEditUser(null)}> Cancel </Button>
+              <Button onClick={handleUpdate} mt={0.5} mr={0.5} appearance="primary"> Save </Button>
+              <Button onClick={() => setEditUser(null)} mt={0.5} mr={0.5} appearance="primary" danger> Cancel </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </FullScreenModal>
+        )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <PageTitle>Confirm Delete</PageTitle>
+        {/* Delete Confirmation Modal */}
+        {deleteUser && (
+          <FullScreenModal isOpen={Boolean(deleteUser)} title={"Confirm Delete"} onRequestClose={() => setDeleteUser(null)}>
             <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
-            <div className="flex gap-2 mt-4">
-              <Button onClick={handleDelete}> Delete </Button>
-              <Button onClick={() => setDeleteUser(null)}> Cancel </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleDelete} mt={0.5} mr={0.5} appearance="primary" danger> Delete </Button>
+              <Button onClick={() => setDeleteUser(null)} mt={0.5} mr={0.5} appearance="primary"> Cancel </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </FullScreenModal>
+        )}
+      </Container>
     </div>
   );
 };
