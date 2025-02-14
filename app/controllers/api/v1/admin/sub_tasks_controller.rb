@@ -11,7 +11,7 @@ class Api::V1::Admin::SubTasksController < ApplicationController
         description: sub_task.description,
         deadline: sub_task.deadline,
         users_id: sub_task.users_id,
-        user_name: sub_task.user&.name 
+        user_name: sub_task.user&.name
       }
     end
     render json: sub_tasks_with_user_names
