@@ -1,13 +1,15 @@
-import { ListTable, PageTitle, TableHeader, Text, Button, FormControlLabel, Paragraph, TextField, TextArea } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Text, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, Container, CardBase } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
+import { useNavigate } from "react-router-dom";
 
 const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
   { value: 'Name', ordering: 'asc' },
   { value: 'Description' },
   { value: 'Deadline' },
+  { value: 'Created By' },
   { value: 'Actions', alignRight: true }
 ];
 
@@ -17,6 +19,7 @@ interface MainTask {
   description: string;
   deadline: string;
   users_id: number;
+  user_name?: string; 
 }
 
 const AdminMainTasks = () => {
@@ -28,21 +31,35 @@ const AdminMainTasks = () => {
   const [editTask, setEditTask] = useState<MainTask | null>(null);
   const [deleteTask, setDeleteTask] = useState<MainTask | null>(null);
   const [createTask, setCreateTask] = useState<MainTask | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ name: string; role: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ name: string; role: string; id: number } | null>(null);
   const [editSubTask, setEditSubTask] = useState<any | null>(null);
   const [deleteSubTask, setDeleteSubTask] = useState<any | null>(null);
   const [createSubTask, setCreateSubTask] = useState<any | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (user) {
-      setCurrentUser({
-        name: user.name,
-        role: user.role,
-      });
-    }
-    fetchMainTasks();
-  }, []);
+    const fetchCurrentUser = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError("No token found, please log in again");
+        navigate('/users/sign_in');
+        return;
+      }
+
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (user) {
+        setCurrentUser({
+          name: user.name,
+          role: user.role,
+          id: user.id, 
+        });
+      }
+
+      fetchMainTasks();
+    };
+
+    fetchCurrentUser();
+  }, [navigate]);
 
   const fetchSubTasks = async (mainTaskId: number) => {
     try {
@@ -65,9 +82,10 @@ const AdminMainTasks = () => {
   };
 
   const handleCreate = async () => {
-    if (!createTask) return;
+    if (!createTask || !currentUser) return;
     try {
-      await axios.post("http://localhost:3000/api/v1/admin/main_tasks", createTask, { withCredentials: true });
+      const taskWithUserId = { ...createTask, users_id: currentUser.id };
+      await axios.post("http://localhost:3000/api/v1/admin/main_tasks", taskWithUserId, { withCredentials: true });
       fetchMainTasks();
       setCreateTask(null);
     } catch (err) {
@@ -102,11 +120,12 @@ const AdminMainTasks = () => {
   };
 
   const handleCreateSubTask = async () => {
-    if (!createSubTask || !selectedMainTask?.id) return; 
+    if (!createSubTask || !selectedMainTask?.id || !currentUser) return;
     try {
+      const subTaskWithUserId = { ...createSubTask, users_id: currentUser.id };
       await axios.post(
         `http://localhost:3000/api/v1/admin/main_tasks/${selectedMainTask.id}/sub_tasks`,
-        createSubTask,
+        subTaskWithUserId,
         { withCredentials: true }
       );
       fetchSubTasks(selectedMainTask.id);
@@ -115,10 +134,9 @@ const AdminMainTasks = () => {
       setError("Failed to create sub task");
     }
   };
-  
+
   const handleUpdateSubTask = async () => {
     if (!editSubTask || !selectedMainTask?.id || !editSubTask.id) return;
-  
     try {
       await axios.put(
         `http://localhost:3000/api/v1/admin/main_tasks/${selectedMainTask.id}/sub_tasks/${editSubTask.id}`,
@@ -131,9 +149,9 @@ const AdminMainTasks = () => {
       setError("Failed to update sub task");
     }
   };
-  
+
   const handleDeleteSubTask = async () => {
-    if (!deleteSubTask || !selectedMainTask?.id || !deleteSubTask.id) return; 
+    if (!deleteSubTask || !selectedMainTask?.id || !deleteSubTask.id) return;
     try {
       await axios.delete(
         `http://localhost:3000/api/v1/admin/main_tasks/${selectedMainTask.id}/sub_tasks/${deleteSubTask.id}`,
@@ -146,32 +164,32 @@ const AdminMainTasks = () => {
     }
   };
 
-
   const taskRows = mainTasks.map(task => ({
     cells: [
       { value: task.id },
       { value: task.name },
       { value: task.description },
       { value: task.deadline },
+      { value: task.user_name || "Unknown" }, 
       {
         value: (
           <div className="flex space-x-2">
-            <Button onClick={() => setEditTask(task)} small> Edit </Button>
-            <Button onClick={() => setDeleteTask(task)} small danger> Delete </Button>
+            <Button onClick={() => setEditTask(task)} small mr={0.5} appearance="primary"> Edit </Button>
+            <Button onClick={() => setDeleteTask(task)} small danger mr={0.5}> Delete </Button>
             <Button
-                onClick={() => {
-                    if (task.id) { 
-                    setSelectedMainTask(task);
-                    fetchSubTasks(task.id);
-                    setViewSubTasksModalOpen(true);
-                    } else {
-                    console.error("Task ID is undefined");
-                    }
-                }}
-                small
-                >
-                View Sub Tasks
-                </Button>
+              onClick={() => {
+                if (task.id) {
+                  setSelectedMainTask(task);
+                  fetchSubTasks(task.id);
+                  setViewSubTasksModalOpen(true);
+                } else {
+                  console.error("Task ID is undefined");
+                }
+              }}
+              small
+            >
+              View Sub Tasks
+            </Button>
           </div>
         ),
         alignRight: true
@@ -182,300 +200,224 @@ const AdminMainTasks = () => {
   return (
     <div>
       <NavBar name={currentUser?.name || "Admin Name"} role={currentUser?.role || "admin"} />
-
-      <PageTitle>Admin - Manage Onboarding Checklists</PageTitle>
-      <Button onClick={() => setCreateTask({ name: "", description: "", deadline: "", users_id: 0 })}> Create Task </Button>
+      <Container>
+      <PageTitle mt={1}>Manage Onboarding Checklists</PageTitle>
+      <Button onClick={() => setCreateTask({ name: "", description: "", deadline: "", users_id: 0 })} mt={0.5} mb={1} appearance="primary"> Create Task </Button>
       {error && <Text>{error}</Text>}
+      <CardBase>
       <ListTable headers={headers} rows={taskRows}></ListTable>
+      </CardBase>
 
       {/* Create Task Modal */}
       {createTask && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <PageTitle>Create Main Task</PageTitle>
-            <div className="mb-4">
-              <FormControlLabel>Name</FormControlLabel>
-              <TextField
-                type="text"
-                value={createTask.name}
-                onChange={(e) =>
-                  setCreateTask({ ...createTask, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Description</FormControlLabel>
-              <TextArea
-                value={createTask.description}
-                onChange={(e) =>
-                  setCreateTask({ ...createTask, description: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Duration</FormControlLabel>
-              <input
-                type="datetime-local"
-                value={createTask.deadline}
-                onChange={(e) =>
-                  setCreateTask({ ...createTask, deadline: e.target.value })
-                }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleCreate}
-              >
-                Create
-              </Button>
-              <Button
-                onClick={() => setCreateTask(null)}
-              >
-                Cancel
-              </Button>
-            </div>
+        <FullScreenModal isOpen={Boolean(createTask)} title="Create Main Task" onRequestClose={() => setCreateTask(null)}>
+          <FormControl label="Name" fieldId="name">
+            <TextField
+              type="text"
+              value={createTask.name}
+              onChange={(e) =>
+                setCreateTask({ ...createTask, name: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Description" fieldId="description">
+            <TextArea
+              value={createTask.description}
+              onChange={(e) =>
+                setCreateTask({ ...createTask, description: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Deadline" fieldId="deadline">
+            <input
+              type="datetime-local"
+              value={createTask.deadline}
+              onChange={(e) =>
+                setCreateTask({ ...createTask, deadline: e.target.value })
+              }
+              className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+            />
+          </FormControl>
+          <div className="flex gap-2">
+            <Button onClick={handleCreate} mr={1} mt={1} appearance="primary"> Create </Button>
+            <Button onClick={() => setCreateTask(null)} danger mt={1}> Cancel </Button>
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
       {/* Edit Task Modal */}
       {editTask && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <PageTitle>Edit Main Task</PageTitle>
-            <div className="mb-4">
-              <FormControlLabel>Name</FormControlLabel>
-              <TextField
-                type="text"
-                value={editTask.name}
-                onChange={(e) =>
-                  setEditTask({ ...editTask, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Description</FormControlLabel>
-              <TextField
-                type="text"
-                value={editTask.description}
-                onChange={(e) =>
-                  setEditTask({ ...editTask, description: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Duration</FormControlLabel>
-              <input
-                type="datetime-local"
-                value={editTask.deadline}
-                onChange={(e) =>
-                  setEditTask({ ...editTask, deadline: e.target.value })
-                }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleUpdate}
-              >
-                Save
-              </Button>
-              <Button
-                onClick={() => setEditTask(null)}
-              >
-                Cancel
-              </Button>
-            </div>
+        <FullScreenModal isOpen={Boolean(editTask)} title="Edit Main Task" onRequestClose={() => setEditTask(null)}>
+          <FormControl label="Name" fieldId="edit-name">
+            <TextField
+              type="text"
+              value={editTask.name}
+              onChange={(e) =>
+                setEditTask({ ...editTask, name: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Description" fieldId="edit-description">
+            <TextArea
+              value={editTask.description}
+              onChange={(e) =>
+                setEditTask({ ...editTask, description: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Deadline" fieldId="edit-deadline">
+            <input
+              type="datetime-local"
+              value={editTask.deadline}
+              onChange={(e) =>
+                setEditTask({ ...editTask, deadline: e.target.value })
+              }
+              className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+            />
+          </FormControl>
+          <div className="flex gap-2">
+            <Button onClick={handleUpdate} mr={1} mt={1} appearance="primary"> Save </Button>
+            <Button onClick={() => setEditTask(null)} danger mt={1}> Cancel </Button>
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
       {/* Delete Confirmation Modal */}
       {deleteTask && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <PageTitle>Confirm Delete</PageTitle>
-            <Paragraph>Are you sure you want to delete {deleteTask.name}?</Paragraph>
-            <div className="flex gap-2 mt-4">
-              <Button
-                onClick={handleDelete}
-              >
-                Delete
-              </Button>
-              <Button
-                onClick={() => setDeleteTask(null)}
-              >
-                Cancel
-              </Button>
-            </div>
+        <FullScreenModal isOpen={Boolean(deleteTask)} title="Confirm Delete" onRequestClose={() => setDeleteTask(null)}>
+          <Paragraph>Are you sure you want to delete {deleteTask.name}?</Paragraph>
+          <div className="flex gap-2">
+            <Button onClick={handleDelete} danger mr={1} mt={0.5}> Delete </Button>
+            <Button onClick={() => setDeleteTask(null)} appearance="primary" mt={0.5}> Cancel </Button>
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
-        {viewSubTasksModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <PageTitle>Sub Tasks for {selectedMainTask?.name}</PageTitle>
-            <Button onClick={() => setCreateSubTask({ name: "", description: "", duration: "" })}> Create Sub Task </Button>
-            {subTasks.length === 0 ? (
-              <p>No sub-tasks available.</p>
-            ) : (
-              <ListTable
-                headers={[
-                  { value: 'Name' },
-                  { value: 'Description' },
-                  { value: 'Duration' },
-                  { value: 'Actions', alignRight: true },
-                ]}
-                rows={subTasks.map(subTask => ({
-                  cells: [
-                    { value: subTask.name },
-                    { value: subTask.description },
-                    { value: subTask.duration },
-                    {
-                      value: (
-                        <div className="flex space-x-2">
-                          <Button onClick={() => setEditSubTask(subTask)} small> Edit </Button>
-                          <Button onClick={() => setDeleteSubTask(subTask)} small danger> Delete </Button>
-                        </div>
-                      ),
-                      alignRight: true
-                    }
-                  ],
-                }))}
-              />
-            )}
-            <div className="mt-4 flex justify-end">
-              <Button onClick={() => setViewSubTasksModalOpen(false)}>Close</Button>
-            </div>
-          </div>
-        </div>
+      {/* View Sub Tasks Modal */}
+      {viewSubTasksModalOpen && (
+        <FullScreenModal isOpen={viewSubTasksModalOpen} title={`Sub Tasks for ${selectedMainTask?.name}`} onRequestClose={() => setViewSubTasksModalOpen(false)}>
+          <Button onClick={() => setCreateSubTask({ name: "", description: "", duration: "" })} ma={0.5} appearance="primary"> Create Sub Task </Button>
+          <CardBase ma={1}>
+          {subTasks.length === 0 ? (
+            <Paragraph>No sub-tasks available.</Paragraph>
+          ) : (
+            <ListTable
+              headers={[
+                { value: 'Name' },
+                { value: 'Description' },
+                { value: 'Duration' },
+                { value: 'Created By' }, // Added "Created By" column
+                { value: 'Actions', alignRight: true },
+              ]}
+              rows={subTasks.map(subTask => ({
+                cells: [
+                  { value: subTask.name },
+                  { value: subTask.description },
+                  { value: subTask.duration },
+                  { value: subTask.user_name || "Unknown" }, // Display the creator's name
+                  {
+                    value: (
+                      <div className="flex space-x-2">
+                        <Button onClick={() => setEditSubTask(subTask)} small mr={0.5} appearance="primary"> Edit </Button>
+                        <Button onClick={() => setDeleteSubTask(subTask)} small danger> Delete </Button>
+                      </div>
+                    ),
+                    alignRight: true
+                  }
+                ],
+              }))}
+            />
+          )}
+          </CardBase>
+          <Button onClick={() => setViewSubTasksModalOpen(false)} ma={0.5}>Close</Button>
+        </FullScreenModal>
       )}
 
       {/* Create Sub Task Modal */}
       {createSubTask && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <PageTitle>Create Sub Task</PageTitle>
-            <div className="mb-4">
-              <FormControlLabel>Name</FormControlLabel>
-              <TextField
-                type="text"
-                value={createSubTask.name}
-                onChange={(e) =>
-                  setCreateSubTask({ ...createSubTask, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Description</FormControlLabel>
-              <TextArea
-                value={createSubTask.description}
-                onChange={(e) =>
-                  setCreateSubTask({ ...createSubTask, description: e.target.value })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Duration</FormControlLabel>
-              <input
-                type="datetime-local"
-                value={createSubTask.duration}
-                onChange={(e) =>
-                  setCreateSubTask({ ...createSubTask, duration: e.target.value })
-                }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleCreateSubTask}
-              >
-                Create
-              </Button>
-              <Button
-                onClick={() => setCreateSubTask(null)}
-              >
-                Cancel
-              </Button>
-            </div>
+        <FullScreenModal isOpen={Boolean(createSubTask)} title="Create Sub Task" onRequestClose={() => setCreateSubTask(null)}>
+          <FormControl label="Name" fieldId="sub-task-name">
+            <TextField
+              type="text"
+              value={createSubTask.name}
+              onChange={(e) =>
+                setCreateSubTask({ ...createSubTask, name: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Description" fieldId="sub-task-description">
+            <TextArea
+              value={createSubTask.description}
+              onChange={(e) =>
+                setCreateSubTask({ ...createSubTask, description: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Duration" fieldId="sub-task-duration">
+            <input
+              type="datetime-local"
+              value={createSubTask.duration}
+              onChange={(e) =>
+                setCreateSubTask({ ...createSubTask, duration: e.target.value })
+              }
+              className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+            />
+          </FormControl>
+          <div className="flex gap-2">
+            <Button onClick={handleCreateSubTask} mr={0.5} mt={1} appearance="primary"> Create </Button>
+            <Button onClick={() => setCreateSubTask(null)} mt={1} danger> Cancel </Button>
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
       {/* Edit Sub Task Modal */}
       {editSubTask && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <PageTitle>Edit Sub Task</PageTitle>
-            <div className="mb-4">
-              <FormControlLabel>Name</FormControlLabel>
-              <TextField
-                type="text"
-                value={editSubTask.name}
-                onChange={(e) =>
-                    setEditSubTask({ ...editSubTask, name: e.target.value })
-                }
-                />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Description</FormControlLabel>
-              <TextArea
-                value={editSubTask.description}
-                onChange={(e) =>
-                    setEditSubTask({ ...editSubTask, description: e.target.value })
-                }
-                />
-            </div>
-            <div className="mb-4">
-              <FormControlLabel>Duration</FormControlLabel>
-              <input
-                type="datetime-local"
-                value={editSubTask.duration}
-                onChange={(e) =>
-                    setEditSubTask({ ...editSubTask, duration: e.target.value })
-                }
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleUpdateSubTask}
-              >
-                Save
-              </Button>
-              <Button
-                onClick={() => setEditSubTask(null)}
-              >
-                Cancel
-              </Button>
-            </div>
+        <FullScreenModal isOpen={Boolean(editSubTask)} title="Edit Sub Task" onRequestClose={() => setEditSubTask(null)}>
+          <FormControl label="Name" fieldId="edit-sub-task-name">
+            <TextField
+              type="text"
+              value={editSubTask.name}
+              onChange={(e) =>
+                setEditSubTask({ ...editSubTask, name: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Description" fieldId="edit-sub-task-description">
+            <TextArea
+              value={editSubTask.description}
+              onChange={(e) =>
+                setEditSubTask({ ...editSubTask, description: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Duration" fieldId="edit-sub-task-duration">
+            <input
+              type="datetime-local"
+              value={editSubTask.duration}
+              onChange={(e) =>
+                setEditSubTask({ ...editSubTask, duration: e.target.value })
+              }
+              className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
+            />
+          </FormControl>
+          <div className="flex gap-2">
+            <Button onClick={handleUpdateSubTask} mr={0.5} mt={1} appearance="primary"> Save </Button>
+            <Button onClick={() => setEditSubTask(null)} mt={1} danger> Cancel </Button>
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
       {/* Delete Sub Task Confirmation Modal */}
       {deleteSubTask && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center backdrop-blur-md z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <PageTitle>Confirm Delete</PageTitle>
-            <Paragraph>Are you sure you want to delete {deleteSubTask.name}?</Paragraph>
-            <div className="flex gap-2 mt-4">
-              <Button
-                onClick={handleDeleteSubTask}
-              >
-                Delete
-              </Button>
-              <Button
-                onClick={() => setDeleteSubTask(null)}
-              >
-                Cancel
-              </Button>
-            </div>
+        <FullScreenModal isOpen={Boolean(deleteSubTask)} title="Confirm Delete" onRequestClose={() => setDeleteSubTask(null)}>
+          <Paragraph>Are you sure you want to delete {deleteSubTask.name}?</Paragraph>
+          <div className="flex gap-2">
+            <Button onClick={handleDeleteSubTask} mt={1} mr={1} danger> Delete </Button>
+            <Button onClick={() => setDeleteSubTask(null)} mt={1} appearance="primary"> Cancel </Button>
           </div>
-        </div>
+        </FullScreenModal>
       )}
+      </Container>
     </div>
   );
 };
