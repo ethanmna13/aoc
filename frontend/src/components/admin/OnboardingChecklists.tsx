@@ -7,7 +7,7 @@ const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
   { value: 'Name', ordering: 'asc' },
   { value: 'Description' },
-  { value: 'Duration' },
+  { value: 'Deadline' },
   { value: 'Actions', alignRight: true }
 ];
 
@@ -15,7 +15,7 @@ interface MainTask {
   id?: number;
   name: string;
   description: string;
-  duration: string;
+  deadline: string;
   users_id: number;
 }
 
@@ -152,7 +152,7 @@ const AdminMainTasks = () => {
       { value: task.id },
       { value: task.name },
       { value: task.description },
-      { value: task.duration },
+      { value: task.deadline },
       {
         value: (
           <div className="flex space-x-2">
@@ -184,7 +184,7 @@ const AdminMainTasks = () => {
       <NavBar name={currentUser?.name || "Admin Name"} role={currentUser?.role || "admin"} />
 
       <PageTitle>Admin - Manage Onboarding Checklists</PageTitle>
-      <Button onClick={() => setCreateTask({ name: "", description: "", duration: "", users_id: 0 })}> Create Task </Button>
+      <Button onClick={() => setCreateTask({ name: "", description: "", deadline: "", users_id: 0 })}> Create Task </Button>
       {error && <Text>{error}</Text>}
       <ListTable headers={headers} rows={taskRows}></ListTable>
 
@@ -216,9 +216,9 @@ const AdminMainTasks = () => {
               <FormControlLabel>Duration</FormControlLabel>
               <input
                 type="datetime-local"
-                value={createTask.duration}
+                value={createTask.deadline}
                 onChange={(e) =>
-                  setCreateTask({ ...createTask, duration: e.target.value })
+                  setCreateTask({ ...createTask, deadline: e.target.value })
                 }
                 className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
               />
@@ -268,9 +268,9 @@ const AdminMainTasks = () => {
               <FormControlLabel>Duration</FormControlLabel>
               <input
                 type="datetime-local"
-                value={editTask.duration}
+                value={editTask.deadline}
                 onChange={(e) =>
-                  setEditTask({ ...editTask, duration: e.target.value })
+                  setEditTask({ ...editTask, deadline: e.target.value })
                 }
                 className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
               />

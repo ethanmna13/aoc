@@ -22,7 +22,7 @@ function NavHeader({ name }: NavHeaderProps) {
       };
   return (
     <Header
-      logo={<img src={likhaLogo} width="200px" height="25px"></img>}
+      logo={<img src={likhaLogo} width="315px" height="40px"></img>}
       sectionNode={
         <Stack direction="horizontal">
           <Paragraph>Welcome, {name}!</Paragraph>

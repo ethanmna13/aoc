@@ -9,7 +9,7 @@ class Api::V1::Admin::MainTasksController < ApplicationController
         id: task.id,
         name: task.name,
         description: task.description,
-        duration: task.duration,
+        deadline: task.deadline,
         users_id: task.users_id,
         user_name: task.user&.name
       }
@@ -55,6 +55,6 @@ class Api::V1::Admin::MainTasksController < ApplicationController
   end
 
   def main_task_params
-    params.require(:main_task).permit(:name, :description, :duration, :users_id)
+    params.require(:main_task).permit(:name, :description, :deadline, :users_id)
   end
 end
