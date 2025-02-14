@@ -1,6 +1,6 @@
 class Api::V1::Admin::SubTasksController < ApplicationController
   before_action :set_main_task
-  before_action :set_sub_task, only: [:update, :destroy]
+  before_action :set_sub_task, only: [ :update, :destroy ]
 
   def index
     @sub_tasks = @main_task.sub_tasks.includes(:user)
@@ -18,7 +18,7 @@ class Api::V1::Admin::SubTasksController < ApplicationController
   end
 
   def create
-    @sub_task = @main_task.sub_tasks.new(sub_task_params.merge(users_id: current_user.id)) 
+    @sub_task = @main_task.sub_tasks.new(sub_task_params.merge(users_id: current_user.id))
     if @sub_task.save
       render json: {
         id: @sub_task.id,
@@ -26,7 +26,7 @@ class Api::V1::Admin::SubTasksController < ApplicationController
         description: @sub_task.description,
         deadline: @sub_task.deadline,
         users_id: @sub_task.users_id,
-        user_name: @sub_task.user&.name 
+        user_name: @sub_task.user&.name
       }, status: :created
     else
       render json: @sub_task.errors, status: :unprocessable_entity
@@ -41,7 +41,7 @@ class Api::V1::Admin::SubTasksController < ApplicationController
         description: @sub_task.description,
         deadline: @sub_task.deadline,
         users_id: @sub_task.users_id,
-        user_name: @sub_task.user&.name 
+        user_name: @sub_task.user&.name
       }
     else
       render json: @sub_task.errors, status: :unprocessable_entity
