@@ -23,6 +23,7 @@ interface Mentorships {
     mentee: string;
     assignedMainTask: string;
     status: string;
+    submissions: File;
 }
 
 const mentorHeaders: TableHeader[] = [
