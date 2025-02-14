@@ -1,7 +1,9 @@
-import { Button, FormControlLabel, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
+import { Button, CardBase, Container, FormControl, FormControlLabel, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import likhalogo from "../assets/images/header_likhait-freee-logo.png";
+import "./css/Custom.css";
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -42,38 +44,40 @@ const LoginPage = () => {
   };
 
   return (
-    <div>
-      <div>
-        <img
-          className="mx-auto h-12 w-auto"
-          src="https://likhait.com/wp-content/themes/likhait/assets/media/common/header_likhait-freee-logo.png"
+    <div className="container">
+      <CardBase paddingSize="large">
+        <img 
+          src={likhalogo}
           alt="Workflow"
+          className="custom-logo"
         />
-        <PageTitle>FreeeBoarding</PageTitle>
-        <Paragraph>Sign in to your account</Paragraph>
-      </div>
-      <div id="login-form">
-        <FormControlLabel htmlFor="email">Email</FormControlLabel>
-        <TextField
-          id="email"
-          width="large"
-          type="email"
-          required={true}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <FormControlLabel htmlFor="password">Password</FormControlLabel>
-        <TextField
-          id="password"
-          width="large"
-          type="password"
-          required={true}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
+        <PageTitle textAlign="center">FreeeBoarding</PageTitle>
+        <Paragraph textAlign="center">Sign in to your account</Paragraph>
+        <FormControl label="Email" marginLeft>
+          <TextField 
+            id="email"
+            width="large"
+            type="email"
+            required={true}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </FormControl>
+        <FormControl label="Password" marginLeft>
+          <TextField 
+            id="password"
+            width="large"
+            type="password"
+            required={true}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </FormControl>
       {error && <p className="text-red-500 text-center">{error}</p>}
+      <div className="button-container">
       <Button onClick={handleSubmit} appearance="primary" width="default">
         Log in
       </Button>
+      </div>
+      </CardBase>
     </div>
   );
 };
