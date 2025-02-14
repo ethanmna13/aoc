@@ -42,7 +42,7 @@ const AdminUsersPage = () => {
       const token = localStorage.getItem('authToken');
       if (!token) {
         setError("No token found, please log in again");
-        navigate('/users/sign_in');
+        navigate('/sign_in');
         return;
       } else if (JSON.parse(currentUser).role === "mentor" || JSON.parse(currentUser).role === "mentee") {
         setError("Unauthorized");
