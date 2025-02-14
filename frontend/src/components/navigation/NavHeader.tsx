@@ -14,6 +14,8 @@ function NavHeader({ name }: NavHeaderProps) {
             withCredentials: true,
           });
           if (response.status === 200) {
+            localStorage.clear();
+            sessionStorage.clear(); 
             window.location.href = '/'; 
           }
         } catch (err) {
