@@ -42,7 +42,7 @@ const AdminMainTasks = () => {
       const token = localStorage.getItem('authToken');
       if (!token) {
         setError("No token found, please log in again");
-        navigate('/users/sign_in');
+        navigate('/sign_in');
         return;
       }
 
@@ -296,7 +296,7 @@ const AdminMainTasks = () => {
       {/* View Sub Tasks Modal */}
       {viewSubTasksModalOpen && (
         <FullScreenModal isOpen={viewSubTasksModalOpen} title={`Sub Tasks for ${selectedMainTask?.name}`} onRequestClose={() => setViewSubTasksModalOpen(false)}>
-          <Button onClick={() => setCreateSubTask({ name: "", description: "", duration: "" })} ma={0.5} appearance="primary"> Create Sub Task </Button>
+          <Button onClick={() => setCreateSubTask({ name: "", description: "", deadline: "" })} ma={0.5} appearance="primary"> Create Sub Task </Button>
           <CardBase ma={1}>
           {subTasks.length === 0 ? (
             <Paragraph>No sub-tasks available.</Paragraph>
@@ -305,16 +305,16 @@ const AdminMainTasks = () => {
               headers={[
                 { value: 'Name' },
                 { value: 'Description' },
-                { value: 'Duration' },
-                { value: 'Created By' }, // Added "Created By" column
+                { value: 'Deadline' },
+                { value: 'Created By' }, 
                 { value: 'Actions', alignRight: true },
               ]}
               rows={subTasks.map(subTask => ({
                 cells: [
                   { value: subTask.name },
                   { value: subTask.description },
-                  { value: subTask.duration },
-                  { value: subTask.user_name || "Unknown" }, // Display the creator's name
+                  { value: subTask.deadline },
+                  { value: subTask.user_name || "Unknown" }, 
                   {
                     value: (
                       <div className="flex space-x-2">
@@ -353,12 +353,12 @@ const AdminMainTasks = () => {
               }
             />
           </FormControl>
-          <FormControl label="Duration" fieldId="sub-task-duration">
+          <FormControl label="Deadline" fieldId="sub-task-deadline">
             <input
               type="datetime-local"
-              value={createSubTask.duration}
+              value={createSubTask.deadline}
               onChange={(e) =>
-                setCreateSubTask({ ...createSubTask, duration: e.target.value })
+                setCreateSubTask({ ...createSubTask, deadline: e.target.value })
               }
               className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
             />
@@ -390,12 +390,12 @@ const AdminMainTasks = () => {
               }
             />
           </FormControl>
-          <FormControl label="Duration" fieldId="edit-sub-task-duration">
+          <FormControl label="Deadline" fieldId="edit-sub-task-deadline">
             <input
               type="datetime-local"
-              value={editSubTask.duration}
+              value={editSubTask.deadline}
               onChange={(e) =>
-                setEditSubTask({ ...editSubTask, duration: e.target.value })
+                setEditSubTask({ ...editSubTask, deadline: e.target.value })
               }
               className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
             />

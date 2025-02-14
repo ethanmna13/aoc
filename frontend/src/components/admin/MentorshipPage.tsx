@@ -66,7 +66,7 @@ const MentorshipPage = () => {
         const token = localStorage.getItem('authToken');
         if (!token) {
             setError("No token found, please log in again");
-            navigate('/users/sign_in');
+            navigate('/sign_in');
             return;
         }
         console.log(token);
