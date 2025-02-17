@@ -26,8 +26,14 @@ class User < ApplicationRecord
   end
 
   def generate_jwt
-    payload = { id: id, exp: 1.day.from_now.to_i }
-    JWT.encode(payload, ENV["DEVISE_JWT_SECRET_KEY"])
+    payload = {
+      sub: id,
+      name: name,
+      role: role,
+      account_status: account_status,
+      exp: 1.day.from_now.to_i
+    }
+    JWT.encode(payload, ENV["DEVISE_JWT_SECRET_KEY"], "HS256")
   end
 
   def jwt_payload

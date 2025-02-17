@@ -1,9 +1,16 @@
-import { Button, CardBase, Container, FormControl, FormControlLabel, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
+import { Button, CardBase, FormControl, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import likhalogo from "../assets/images/header_likhait-freee-logo.png";
+import { jwtDecode } from 'jwt-decode';
 import "./css/Custom.css";
+
+interface CustomJwtPayload {
+  id: number;
+  role: string;
+  name: string;
+}
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -24,18 +31,31 @@ const LoginPage = () => {
       });
 
       if (response.status === 200) {
-        const { token, user } = response.data;
-        console.log(token, user); 
+        const { token } = response.data;
+        console.log(token);
+
         localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        if (user.role == "admin"){ 
-          navigate('/admin/users');
-        } else if (user.role == "mentor"){
-          navigate('/mentor/main-tasks')
-        } else if (user.role == "mentee"){
-          navigate('/mentee/TODO')
+
+        const decoded = jwtDecode<CustomJwtPayload>(token);
+        console.log(decoded);
+
+        if (decoded && decoded.role) {
+          const userRole = decoded.role.trim().toLowerCase();
+          console.log("User Role:", userRole);
+
+          if (userRole === "admin") {
+            navigate('/admin/users');
+          } else if (userRole === "mentor") {
+            navigate('/mentor/main-tasks');
+          } else if (userRole === "mentee") {
+            navigate('/mentee/TODO');
+          } else {
+            console.log("Redirecting to unauthorized - Role not recognized:", userRole);
+            navigate('/unauthorized');
+          }
         } else {
-          navigate('/unauthorized')
+          console.log("Missing or invalid role in token");
+          navigate('/unauthorized');
         }
       }
     } catch (error: any) {
@@ -71,12 +91,12 @@ const LoginPage = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </FormControl>
-      {error && <p className="text-red-500 text-center">{error}</p>}
-      <div className="button-container">
-      <Button onClick={handleSubmit} appearance="primary" width="default">
-        Log in
-      </Button>
-      </div>
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        <div className="button-container">
+          <Button onClick={handleSubmit} appearance="primary" width="default">
+            Log in
+          </Button>
+        </div>
       </CardBase>
     </div>
   );

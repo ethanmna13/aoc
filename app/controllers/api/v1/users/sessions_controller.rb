@@ -1,5 +1,6 @@
 class Api::V1::Users::SessionsController < Devise::SessionsController
   respond_to :json
+  before_action :set_current_user, only: [ :index ]
 
   def create
     user = User.find_by(email: params[:user][:email])
@@ -12,7 +13,6 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
         user: user.slice(:id, :email, :name, :role, :account_status),
         token: token
       }, status: :ok
-      Rails.logger.debug("current_user: #{current_user.inspect}")
     else
       render json: { error: "Invalid email or password" }, status: :unauthorized
     end

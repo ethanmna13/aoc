@@ -4,6 +4,7 @@ import axios from "axios";
 import NavBar from "../navigation/NavBar";
 import { useNavigate } from "react-router-dom";
 import React from "react";
+import { jwtDecode } from "jwt-decode";
 
 const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
@@ -21,6 +22,12 @@ interface Users {
   account_status: number;
 }
 
+interface CustomJwtPayload {
+  id: number;
+  name: string;
+  role: string;
+}
+
 const AdminUsersPage = () => {
   const [users, setUsers] = useState<Users[]>([]);
   const [error, setError] = useState<string>("");
@@ -32,7 +39,7 @@ const AdminUsersPage = () => {
     role: 0,
     account_status: 0,
   });
-  const [currentUser] = useState(localStorage.getItem("user") || "[]");
+  const [currentUser, setCurrentUser] = useState<CustomJwtPayload | null>(null);
   const navigate = useNavigate();
   const [isOpen, setOpen] = React.useState<boolean>(false);
   const toggle = () => setOpen(!isOpen);
@@ -44,17 +51,26 @@ const AdminUsersPage = () => {
         setError("No token found, please log in again");
         navigate('/sign_in');
         return;
-      } else if (JSON.parse(currentUser).role === "mentor" || JSON.parse(currentUser).role === "mentee") {
-        setError("Unauthorized");
-        navigate('/unauthorized');
-      } else {
-        console.log(token);
-        console.log(JSON.parse(currentUser));
-        fetchUsers();
+      }
+
+      try {
+        const decodedToken = jwtDecode<CustomJwtPayload>(token);
+        setCurrentUser(decodedToken);
+
+        if (decodedToken.role !== "admin") {
+          setError("Unauthorized");
+          navigate('/unauthorized');
+        } else {
+          fetchUsers();
+        }
+      } catch (err) {
+        setError("Invalid token");
+        navigate('/sign_in');
       }
     };
+
     fetchCurrentUser();
-  }, [currentUser, navigate]);
+  }, [navigate]);
 
   const fetchUsers = async () => {
     const token = localStorage.getItem('authToken');
@@ -144,7 +160,7 @@ const AdminUsersPage = () => {
 
   return (
     <div>
-      <NavBar name={JSON.parse(currentUser).name || "Admin Name"} role={JSON.parse(currentUser).role || "admin"} />
+      {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
       <Container>
         <PageTitle mt={1}>Admin - Manage Users</PageTitle>
         <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
