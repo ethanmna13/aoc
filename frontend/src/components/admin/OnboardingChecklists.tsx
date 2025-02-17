@@ -219,6 +219,12 @@ const AdminMainTasks = () => {
         formData.append('sub_task[attachments][]', file);
       });
     }
+
+    if (editSubTask.removedAttachmentIds) {
+      editSubTask.removedAttachmentIds.forEach((id: number) => {
+        formData.append('sub_task[remove_attachment_ids][]', id.toString());
+      });
+    }
   
     try {
       const response = await axios.put(
@@ -577,6 +583,23 @@ const AdminMainTasks = () => {
                 setEditSubTask({ ...editSubTask, attachments: fileArray });
               }}
             />
+            {/* Display newly added attachments */}
+            {(editSubTask.attachments || []).map((file: File, index: number) => (
+              <div key={index} className="flex items-center mt-2">
+                <span>{file.name}</span>
+                <Button
+                  onClick={() => {
+                    const updatedAttachments = (editSubTask.attachments || []).filter((file: File, i: number) => i !== index);
+                    setEditSubTask({ ...editSubTask, attachments: updatedAttachments });
+                  }}
+                  small
+                  danger
+                  ml={2}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
           </FormControl>
           <div className="flex gap-2">
             <Button onClick={handleUpdateSubTask} mr={0.5} mt={1} appearance="primary"> Save </Button>
