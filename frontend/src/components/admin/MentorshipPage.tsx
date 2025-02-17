@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import React from "react";
+import { jwtDecode } from "jwt-decode";
 
 interface Mentors {
     id?: number;
@@ -24,6 +25,12 @@ interface Mentorships {
     assignedMainTask: string;
     status: string;
     submissions: File;
+}
+
+interface CustomJwtPayload {
+  id: number;
+  name: string;
+  role: string;
 }
 
 const mentorHeaders: TableHeader[] = [
@@ -52,7 +59,7 @@ const mentorshipHeaders: TableHeader[] = [
 
 
 const MentorshipPage = () => {
-    const [currentUser] = useState(localStorage.getItem("user") || "[]");
+    const [currentUser, setCurrentUser] = useState<{ name: string; role: string; id: number } | null>(null);
     const [error, setError] = useState<string>("");
     const navigate = useNavigate();
     const [mentors, setMentors] = useState<Mentors[]>([]);
@@ -69,18 +76,30 @@ const MentorshipPage = () => {
             navigate('/sign_in');
             return;
         }
-        console.log(token);
-        console.log(JSON.parse(currentUser));
-        fetchMentors();
-        fetchMentees();
-        };
+
+        try {
+          const decodedToken = jwtDecode<CustomJwtPayload>(token);
+          setCurrentUser(decodedToken);
+          if (decodedToken.role !== "admin") {
+            setError("Unauthorized");
+            navigate('/unauthorized');
+          } else {
+            fetchMentors();
+            fetchMentees();
+        }
+      } catch (err) {
+        setError("Invalid token");
+        navigate('/sign_in');
+      }
+    };
         fetchCurrentUser();
-    }, []);
+    }, [navigate]);
 
     const fetchMentors = async () => {
         const token = localStorage.getItem('authToken');
         try {
           const response = await axios.get("http://localhost:3000/api/v1/mentors", {
+            withCredentials: true,
             headers: {
               Authorization: `Bearer ${token}`, 
             },
@@ -95,6 +114,7 @@ const MentorshipPage = () => {
         const token = localStorage.getItem('authToken');
         try {
           const response = await axios.get("http://localhost:3000/api/v1/mentees", {
+            withCredentials: true,
             headers: {
               Authorization: `Bearer ${token}`, 
             },
@@ -124,7 +144,7 @@ const MentorshipPage = () => {
     }));
         return (
             <div>
-            <NavBar name={JSON.parse(currentUser).name || ""} role={JSON.parse(currentUser).role || ""} />
+             {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
             <Container >
                 <PageTitle ma={1} mb={1}>Mentors</PageTitle>
                 <CardBase>

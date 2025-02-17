@@ -1,4 +1,7 @@
 class Api::V1::Admin::MentorshipsController < ApplicationController
+  respond_to :json
+  before_action :authenticate_user!
+
   def index
     mentorships = Mentorships.all
     render json: mentorships

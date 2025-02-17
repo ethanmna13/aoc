@@ -5,12 +5,16 @@ Rails.application.routes.draw do
       devise_for :users,  controllers: {
         sessions: "api/v1/users/sessions"
       }
-      resources :mentors, only: [ :index ]
-      resources :mentees, only: [ :index ]
+      resources :mentors
+      resources :mentees
       namespace :admin do
         resources :users, only: [ :index, :update, :destroy, :create ]
         resources :main_tasks, only: [ :index, :show, :create, :update, :destroy ] do
-          resources :sub_tasks, only: [ :index, :create, :update, :destroy ]
+          resources :sub_tasks, only: [ :index, :create, :update, :destroy ] do
+            member do
+              delete :remove_attachment
+            end
+          end
         end
       end
     end

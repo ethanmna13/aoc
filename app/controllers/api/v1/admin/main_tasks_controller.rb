@@ -1,4 +1,5 @@
 class Api::V1::Admin::MainTasksController < ApplicationController
+  before_action :authenticate_user!
   before_action :set_main_task, only: [ :show, :update, :destroy ]
   respond_to :json
 
@@ -22,9 +23,17 @@ class Api::V1::Admin::MainTasksController < ApplicationController
   end
 
   def create
-    main_task = MainTask.new(main_task_params)
+    main_task = MainTask.new(main_task_params.merge(users_id: current_user.id))
+
     if main_task.save
-      render json: main_task, status: :created
+      render json: {
+        id: main_task.id,
+        name: main_task.name,
+        description: main_task.description,
+        deadline: main_task.deadline,
+        users_id: main_task.users_id,
+        user_name: main_task.user&.name
+      }, status: :created
     else
       render json: { error: main_task.errors.full_messages }, status: :unprocessable_entity
     end
@@ -32,7 +41,14 @@ class Api::V1::Admin::MainTasksController < ApplicationController
 
   def update
     if @main_task.update(main_task_params)
-      render json: @main_task
+      render json: {
+        id: @main_task.id,
+        name: @main_task.name,
+        description: @main_task.description,
+        deadline: @main_task.deadline,
+        users_id: @main_task.users_id,
+        user_name: @main_task.user&.name
+      }
     else
       render json: { error: @main_task.errors.full_messages }, status: :unprocessable_entity
     end
@@ -55,6 +71,6 @@ class Api::V1::Admin::MainTasksController < ApplicationController
   end
 
   def main_task_params
-    params.require(:main_task).permit(:name, :description, :deadline, :users_id)
+    params.require(:main_task).permit(:name, :description, :deadline)
   end
 end
