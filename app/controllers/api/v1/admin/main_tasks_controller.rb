@@ -1,6 +1,6 @@
 class Api::V1::Admin::MainTasksController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_main_task, only: [:show, :update, :destroy]
+  before_action :set_main_task, only: [ :show, :update, :destroy ]
   respond_to :json
 
   def index
