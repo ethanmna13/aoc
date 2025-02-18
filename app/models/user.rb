@@ -6,8 +6,8 @@ class User < ApplicationRecord
 
   has_many :main_tasks, foreign_key: "users_id"
   has_many :sub_tasks, foreign_key: "users_id"
-  has_one :mentor, foreign_key: "users_id"
-  has_one :mentee, foreign_key: "users_id"
+  has_many :mentorships_as_mentor, class_name: "Mentorship", foreign_key: "mentor_id"
+  has_many :mentorships_as_mentee, class_name: "Mentorship", foreign_key: "mentee_id"
 
   scope :admins, -> { where(role: "admin") }
   scope :mentors, -> { where(role: "mentor") }

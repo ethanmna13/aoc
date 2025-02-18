@@ -4,12 +4,27 @@ class Api::V1::Admin::UsersController < ApplicationController
   before_action :set_user, only: [ :update, :destroy ]
 
   def index
-    users = User.select(:id, :name, :role, :account_status)
+    users = User.select(:id, :email, :name, :role, :account_status)
     if users.empty?
       render json: { message: "No users found" }
     else
       render json: users
     end
+  end
+
+  def mentors
+    mentors = User.mentors
+    render json: mentors
+  end
+
+  def mentees
+    mentees = User.mentees
+    render json: mentees
+  end
+
+  def admins
+    admins = User.admins
+    render json: admins
   end
 
   def create
@@ -23,7 +38,6 @@ class Api::V1::Admin::UsersController < ApplicationController
       render json: { error: user.errors.full_messages }, status: :unprocessable_entity
     end
   end
-
 
   def update
     if @user.update(user_update_params)
@@ -56,10 +70,4 @@ class Api::V1::Admin::UsersController < ApplicationController
   def user_update_params
     params.require(:user).permit(%i[name role account_status])
   end
-
-  # def check_admin_role
-  #   unless current_user&.admin?
-  #     render json: { error: "Forbidden" }, status: :forbidden
-  #   end
-  # end
 end

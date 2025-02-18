@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Text, Button, TextField, Paragraph, Container, CardBase, FullScreenModal, FormControl, SelectBox, TaskDialog } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Text, Button, TextField, Paragraph, Container, CardBase, FormControl, SelectBox, TaskDialog } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -9,6 +9,7 @@ import { jwtDecode } from "jwt-decode";
 const headers: TableHeader[] = [
   { value: 'ID', ordering: 'asc' },
   { value: 'Name', ordering: 'asc' },
+  { value: 'Email' },
   { value: 'Role', alignCenter: true },
   { value: 'Account Status', alignCenter: true },
   { value: 'Actions', alignCenter: true }
@@ -144,6 +145,7 @@ const AdminUsersPage = () => {
     cells: [
       { value: user.id },
       { value: user.name },
+      { value: user.email },
       { value: user.role, alignCenter: true },
       { value: user.account_status === 0 ? "Inactive" : "Active", alignCenter: true },
       {
@@ -162,7 +164,7 @@ const AdminUsersPage = () => {
     <div>
     {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
     <Container>
-      <PageTitle mt={1}>Admin - Manage Users</PageTitle>
+      <PageTitle mt={1}>Manage Users</PageTitle>
       <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
       {error && <Text>{error}</Text>}
       <CardBase>
