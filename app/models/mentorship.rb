@@ -4,4 +4,3 @@ class Mentorship < ApplicationRecord
   has_many :assigned_main_tasks
   has_many :assigned_sub_tasks
 end
-

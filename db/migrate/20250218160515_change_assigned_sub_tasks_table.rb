@@ -7,9 +7,9 @@ class ChangeAssignedSubTasksTable < ActiveRecord::Migration[8.0]
       t.integer "status", default: 0
       t.datetime "created_at", null: false
       t.datetime "updated_at", null: false
-      t.index ["assigned_main_tasks_id"], name: "index_assigned_sub_tasks_on_assigned_main_tasks_id"
-      t.index ["mentorships_id"], name: "index_assigned_sub_tasks_on_mentorships_id"
-      t.index ["sub_task_id"], name: "index_assigned_sub_tasks_on_sub_task_id"
+      t.index [ "assigned_main_tasks_id" ], name: "index_assigned_sub_tasks_on_assigned_main_tasks_id"
+      t.index [ "mentorships_id" ], name: "index_assigned_sub_tasks_on_mentorships_id"
+      t.index [ "sub_task_id" ], name: "index_assigned_sub_tasks_on_sub_task_id"
     end
     add_foreign_key "assigned_sub_tasks", "assigned_main_tasks", column: "assigned_main_tasks_id"
     add_foreign_key "assigned_sub_tasks", "mentorships", column: "mentorships_id"
