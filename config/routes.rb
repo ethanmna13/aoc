@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       }
       resources :mentors
       resources :mentees
+      resources :mentorships
       namespace :admin do
         resources :users, only: [ :index, :update, :destroy, :create ]
         resources :main_tasks, only: [ :index, :show, :create, :update, :destroy ] do
