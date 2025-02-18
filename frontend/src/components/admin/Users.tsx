@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Text, Button, TextField, Paragraph, Container, CardBase, FullScreenModal, FormControl, SelectBox } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Text, Button, TextField, Paragraph, Container, CardBase, FullScreenModal, FormControl, SelectBox, TaskDialog } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -160,116 +160,125 @@ const AdminUsersPage = () => {
 
   return (
     <div>
-      {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
-      <Container>
-        <PageTitle mt={1}>Admin - Manage Users</PageTitle>
-        <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
-        {error && <Text>{error}</Text>}
-        <CardBase>
-          <ListTable headers={headers} rows={userRows}></ListTable>
-        </CardBase>
+    {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
+    <Container>
+      <PageTitle mt={1}>Admin - Manage Users</PageTitle>
+      <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
+      {error && <Text>{error}</Text>}
+      <CardBase>
+        <ListTable headers={headers} rows={userRows}></ListTable>
+      </CardBase>
 
-        {/* Register User Modal */}
-        <FullScreenModal isOpen={isOpen} title={"Register A User"} onRequestClose={toggle}>
-          <FormControl label="Name" fieldId="name">
+      <TaskDialog 
+        id="register-user-dialog" 
+        isOpen={isOpen} 
+        title="Register A User" 
+        onRequestClose={toggle} 
+        closeButtonLabel="Cancel" 
+        primaryButtonLabel="OK" 
+        danger={false} 
+        onPrimaryAction={handleRegister} 
+        shouldCloseOnOverlayClickOrEsc={true} 
+        mobileButtonLayout="column"
+      >
+        <FormControl label="Name" fieldId="name">
+          <TextField
+            type="text"
+            value={registerUser.name || ""}
+            onChange={(e) =>
+              setRegisterUser({ ...registerUser, name: e.target.value })
+            }
+          />
+        </FormControl>
+        <FormControl label="Email" fieldId="email">
+          <TextField
+            type="email"
+            value={registerUser.email || ""}
+            onChange={(e) =>
+              setRegisterUser({ ...registerUser, email: e.target.value })
+            }
+          />
+        </FormControl>
+        <FormControl label="Role" fieldId="role">
+          <SelectBox
+            id="role"
+            name="role"
+            options={[
+              { name: 'Admin', value: '0' }, 
+              { name: 'Mentor', value: '1' }, 
+              { name: 'Mentee', value: '2' } 
+            ]}
+            onChange={(e) => setRegisterUser({ ...registerUser, role: Number(e.target.value) })}
+          />
+        </FormControl>
+      </TaskDialog>
+
+      {editUser && (
+        <TaskDialog
+          id="edit-user-dialog"
+          isOpen={Boolean(editUser)}
+          title="Edit User"
+          onRequestClose={() => setEditUser(null)}
+          closeButtonLabel="Cancel"
+          primaryButtonLabel="Save"
+          onPrimaryAction={handleUpdate}
+          shouldCloseOnOverlayClickOrEsc={true}
+          mobileButtonLayout="column"
+        >
+          <FormControl label="Name" fieldId="edit-name">
             <TextField
               type="text"
-              value={registerUser.name || ""}
+              value={editUser.name}
               onChange={(e) =>
-                setRegisterUser({ ...registerUser, name: e.target.value })
+                setEditUser({ ...editUser, name: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Email" fieldId="email">
-            <TextField
-              type="email"
-              value={registerUser.email || ""}
-              onChange={(e) =>
-                setRegisterUser({ ...registerUser, email: e.target.value })
-              }
-            />
-          </FormControl>
-          <FormControl label="Role" fieldId="role">
+          <FormControl label="Role" fieldId="edit-role">
             <SelectBox
-              id="role"
+              id="edit-role"
               name="role"
               options={[
                 { name: 'Admin', value: '0' }, 
                 { name: 'Mentor', value: '1' }, 
                 { name: 'Mentee', value: '2' } 
               ]}
-              onChange={(e) => setRegisterUser({ ...registerUser, role: Number(e.target.value) })}
+              onChange={(e) => setEditUser({ ...editUser, role: Number(e.target.value) })}
             />
           </FormControl>
-          <div className="flex gap-2">
-            <Button onClick={handleRegister} mt={0.5} mr={0.5} appearance="primary"> Register </Button>
-            <Button onClick={() => {
-              setRegisterUser({
-                name: '',
-                email: '',
-                role: 0,
-                account_status: 0,
-              });
-              toggle();
-            }} mt={0.5} mr={0.5} appearance="primary" danger> Cancel </Button>
-          </div>
-        </FullScreenModal>
+          <FormControl label="Account Status" fieldId="edit-status">
+            <SelectBox
+              id="edit-status"
+              name="status"
+              options={[
+                { name: 'Inactive', value: '0' },
+                { name: 'Active', value: '1' } 
+              ]}
+              onChange={(e) => setEditUser({ ...editUser, account_status: Number(e.target.value) })}
+            />
+          </FormControl>
+        </TaskDialog>
+      )}
 
-        {/* Edit User Modal */}
-        {editUser && (
-          <FullScreenModal isOpen={Boolean(editUser)} title={"Edit User"} onRequestClose={() => setEditUser(null)}>
-            <FormControl label="Name" fieldId="edit-name">
-              <TextField
-                type="text"
-                value={editUser.name}
-                onChange={(e) =>
-                  setEditUser({ ...editUser, name: e.target.value })
-                }
-              />
-            </FormControl>
-            <FormControl label="Role" fieldId="edit-role">
-              <SelectBox
-                id="edit-role"
-                name="role"
-                options={[
-                  { name: 'Admin', value: '0' }, 
-                  { name: 'Mentor', value: '1' }, 
-                  { name: 'Mentee', value: '2' } 
-                ]}
-                onChange={(e) => setEditUser({ ...editUser, role: Number(e.target.value) })}
-              />
-            </FormControl>
-            <FormControl label="Account Status" fieldId="edit-status">
-              <SelectBox
-                id="edit-status"
-                name="status"
-                options={[
-                  { name: 'Inactive', value: '0' },
-                  { name: 'Active', value: '1' } 
-                ]}
-                onChange={(e) => setEditUser({ ...editUser, account_status: Number(e.target.value) })}
-              />
-            </FormControl>
-            <div className="flex gap-2">
-              <Button onClick={handleUpdate} mt={0.5} mr={0.5} appearance="primary"> Save </Button>
-              <Button onClick={() => setEditUser(null)} mt={0.5} mr={0.5} appearance="primary" danger> Cancel </Button>
-            </div>
-          </FullScreenModal>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {deleteUser && (
-          <FullScreenModal isOpen={Boolean(deleteUser)} title={"Confirm Delete"} onRequestClose={() => setDeleteUser(null)}>
-            <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
-            <div className="flex gap-2">
-              <Button onClick={handleDelete} mt={0.5} mr={0.5} appearance="primary" danger> Delete </Button>
-              <Button onClick={() => setDeleteUser(null)} mt={0.5} mr={0.5} appearance="primary"> Cancel </Button>
-            </div>
-          </FullScreenModal>
-        )}
-      </Container>
-    </div>
-  );
+      {deleteUser && (
+        <TaskDialog
+          id="delete-user-dialog"
+          isOpen={Boolean(deleteUser)}
+          title="Confirm Delete"
+          onRequestClose={() => setDeleteUser(null)}
+          closeButtonLabel="Cancel"
+          primaryButtonLabel="Delete"
+          danger={true}
+          onPrimaryAction={handleDelete}
+          shouldCloseOnOverlayClickOrEsc={false}
+          mobileButtonLayout="column"
+        >
+          <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
+        </TaskDialog>
+      )}
+    </Container>
+  </div>
+);
 };
 
 export default AdminUsersPage;
