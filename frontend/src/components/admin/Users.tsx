@@ -151,8 +151,8 @@ const AdminUsersPage = () => {
       {
         value: (
           <div>
-            <Button onClick={() => setEditUser(user)} small appearance="secondary" mr={0.5}> Edit </Button>
-            <Button onClick={() => setDeleteUser(user)} small danger appearance="secondary"> Delete </Button>
+            <Button onClick={() => setEditUser(user)} small appearance="primary" mr={0.5}> Edit </Button>
+            <Button onClick={() => setDeleteUser(user)} small danger > Delete </Button>
           </div>
         ),
         alignCenter: true
