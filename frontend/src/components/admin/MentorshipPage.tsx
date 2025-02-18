@@ -206,8 +206,8 @@ const MentorshipPage = () => {
       {
         value: (
           <div>
-            <Button onClick={() => handleEditMentorship(mentorship.id)} appearance="secondary" small>Edit</Button>
-            <Button onClick={() => handleDeleteMentorship(mentorship.id)} appearance="secondary" danger small ml={0.5}>Delete</Button>
+            <Button onClick={() => handleEditMentorship(mentorship.id)}  appearance="primary" small>Edit</Button>
+            <Button onClick={() => handleDeleteMentorship(mentorship.id)} danger small ml={0.5}>Delete</Button>
           </div>
         ),
         alignRight: true

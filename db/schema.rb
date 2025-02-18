@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_18_140432) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_18_160515) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -41,28 +41,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_18_140432) do
 
   create_table "assigned_main_tasks", force: :cascade do |t|
     t.integer "mentorships_id", null: false
-    t.integer "main_task_id"
-    t.string "main_task_name"
-    t.string "main_task_status"
-    t.string "edited_by"
-    t.string "completed_by"
+    t.integer "main_tasks_id", null: false
+    t.integer "status", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["main_tasks_id"], name: "index_assigned_main_tasks_on_main_tasks_id"
     t.index ["mentorships_id"], name: "index_assigned_main_tasks_on_mentorships_id"
   end
 
   create_table "assigned_sub_tasks", force: :cascade do |t|
     t.integer "mentorships_id", null: false
-    t.integer "sub_task_id"
-    t.string "sub_task_name"
-    t.string "sub_task_status"
+    t.integer "sub_task_id", null: false
     t.integer "assigned_main_tasks_id", null: false
-    t.string "edited_by"
-    t.string "completed_by"
+    t.integer "status", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["assigned_main_tasks_id"], name: "index_assigned_sub_tasks_on_assigned_main_tasks_id"
     t.index ["mentorships_id"], name: "index_assigned_sub_tasks_on_mentorships_id"
+    t.index ["sub_task_id"], name: "index_assigned_sub_tasks_on_sub_task_id"
   end
 
   create_table "main_tasks", force: :cascade do |t|
@@ -80,7 +76,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_18_140432) do
     t.integer "mentee_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "main_task_id"
     t.index ["mentee_id"], name: "index_mentorships_on_mentee_id"
     t.index ["mentor_id"], name: "index_mentorships_on_mentor_id"
   end
@@ -117,9 +112,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_18_140432) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "assigned_main_tasks", "main_tasks", column: "main_tasks_id"
   add_foreign_key "assigned_main_tasks", "mentorships", column: "mentorships_id"
   add_foreign_key "assigned_sub_tasks", "assigned_main_tasks", column: "assigned_main_tasks_id"
   add_foreign_key "assigned_sub_tasks", "mentorships", column: "mentorships_id"
+  add_foreign_key "assigned_sub_tasks", "sub_tasks"
   add_foreign_key "main_tasks", "users", column: "users_id"
   add_foreign_key "mentorships", "users", column: "mentee_id"
   add_foreign_key "mentorships", "users", column: "mentor_id"
