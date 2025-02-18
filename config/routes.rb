@@ -5,11 +5,15 @@ Rails.application.routes.draw do
       devise_for :users,  controllers: {
         sessions: "api/v1/users/sessions"
       }
-      resources :mentors
-      resources :mentees
       resources :mentorships
       namespace :admin do
-        resources :users, only: [ :index, :update, :destroy, :create ]
+        resources :users, only: [ :index, :update, :destroy, :create ] do
+          collection do
+            get "mentors", to: "users#mentors"
+            get "mentees", to: "users#mentees"
+            get "admins", to: "users#admins"
+          end
+        end
         resources :main_tasks, only: [ :index, :show, :create, :update, :destroy ] do
           resources :sub_tasks, only: [ :index, :create, :update, :destroy ] do
             member do
@@ -20,7 +24,6 @@ Rails.application.routes.draw do
       end
     end
   end
-
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

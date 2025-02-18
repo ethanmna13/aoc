@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_17_152532) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_18_140432) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -75,32 +75,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_17_152532) do
     t.index ["users_id"], name: "index_main_tasks_on_users_id"
   end
 
-  create_table "mentees", force: :cascade do |t|
-    t.integer "users_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["users_id"], name: "index_mentees_on_users_id"
-  end
-
-  create_table "mentors", force: :cascade do |t|
-    t.integer "users_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["users_id"], name: "index_mentors_on_users_id"
-  end
-
   create_table "mentorships", force: :cascade do |t|
-    t.integer "mentors_id", null: false
-    t.integer "mentees_id", null: false
-    t.string "status", default: "Pending"
+    t.integer "mentor_id", null: false
+    t.integer "mentee_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "main_tasks_id", null: false
-    t.integer "sub_tasks_id", null: false
-    t.index ["main_tasks_id"], name: "index_mentorships_on_main_tasks_id"
-    t.index ["mentees_id"], name: "index_mentorships_on_mentees_id"
-    t.index ["mentors_id"], name: "index_mentorships_on_mentors_id"
-    t.index ["sub_tasks_id"], name: "index_mentorships_on_sub_tasks_id"
+    t.integer "main_task_id"
+    t.index ["mentee_id"], name: "index_mentorships_on_mentee_id"
+    t.index ["mentor_id"], name: "index_mentorships_on_mentor_id"
   end
 
   create_table "sub_tasks", force: :cascade do |t|
@@ -139,12 +121,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_17_152532) do
   add_foreign_key "assigned_sub_tasks", "assigned_main_tasks", column: "assigned_main_tasks_id"
   add_foreign_key "assigned_sub_tasks", "mentorships", column: "mentorships_id"
   add_foreign_key "main_tasks", "users", column: "users_id"
-  add_foreign_key "mentees", "users", column: "users_id"
-  add_foreign_key "mentors", "users", column: "users_id"
-  add_foreign_key "mentorships", "main_tasks", column: "main_tasks_id"
-  add_foreign_key "mentorships", "mentees", column: "mentees_id"
-  add_foreign_key "mentorships", "mentors", column: "mentors_id"
-  add_foreign_key "mentorships", "sub_tasks", column: "sub_tasks_id"
+  add_foreign_key "mentorships", "users", column: "mentee_id"
+  add_foreign_key "mentorships", "users", column: "mentor_id"
   add_foreign_key "sub_tasks", "main_tasks", column: "main_tasks_id"
   add_foreign_key "sub_tasks", "users", column: "users_id"
 end
