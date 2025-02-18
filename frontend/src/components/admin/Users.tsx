@@ -175,7 +175,7 @@ const AdminUsersPage = () => {
         title="Register A User" 
         onRequestClose={toggle} 
         closeButtonLabel="Cancel" 
-        primaryButtonLabel="OK" 
+        primaryButtonLabel="Register" 
         danger={false} 
         onPrimaryAction={handleRegister} 
         shouldCloseOnOverlayClickOrEsc={true} 

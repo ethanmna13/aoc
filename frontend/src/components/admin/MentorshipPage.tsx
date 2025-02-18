@@ -1,4 +1,4 @@
-import { Button, CardBase, Container, DropdownButton, FormControl, FullScreenModal, ListTable, PageTitle, SelectBox, TableHeader } from "@freee_jp/vibes";
+import { Button, CardBase, Container, DropdownButton, FormControl, FullScreenModal, ListTable, PageTitle, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,14 +25,6 @@ interface MainTask {
   deadline: string;
   users_id?: number;
   user_name?: string; 
-}
-
-
-interface Mentorships {
-    id?: number;
-    mentorID: number;
-    menteeID: number;
-    assignedMainTaskID: number;
 }
 
 interface CustomJwtPayload {
@@ -195,16 +187,6 @@ const MentorshipPage = () => {
       setError("Failed to create mentorship");
     }
   };
-
-  const handleSelectMainTask = (taskId: number) => {
-    setCreateMentorship({
-      ...createMentorship,
-      assignedMainTasks: [
-        ...createMentorship.assignedMainTasks,
-        { mainTaskId: taskId, subTasks: [] }
-      ]
-    });
-  };
   
 
   const mentorRows = mentors.map(mentor => ({
@@ -237,7 +219,16 @@ const MentorshipPage = () => {
         </CardBase>
         <PageTitle mt={1} >Mentorships</PageTitle>
         <Button onClick={() => setOpen(true)} mt={0.5} mb={1} appearance="primary">Create</Button>
-        <FullScreenModal isOpen={isOpen} title={"Create a Mentorship"} onRequestClose={() => setOpen(false)}>
+        <TaskDialog 
+        id="assign-mentorships"
+        isOpen={Boolean(isOpen)}
+        title="Assign a Mentor to a Mentee"
+        onRequestClose={() => setOpen(false)}
+        closeButtonLabel="Cancel"
+        primaryButtonLabel="Create"
+        onPrimaryAction={handleCreateMentorship}
+        shouldCloseOnOverlayClickOrEsc
+        >
           <FormControl label="Select a Mentor" fieldId="selectBox-1">
             <SelectBox
               id="selectBox-1"
@@ -260,20 +251,7 @@ const MentorshipPage = () => {
               onChange={e => setCreateMentorship({ ...createMentorship, menteeID: Number(e.target.value) })}
             />
           </FormControl>
-          <FormControl label="Assign Main Tasks" fieldId="mainTasks">
-            <DropdownButton
-              buttonLabel="Select Main Tasks"
-              dropdownContents={mainTasks.map(task => ({
-              type: 'checkbox',
-              text: task.name,
-              value: task.id?.toString() ?? '',
-              onClick: () => handleSelectMainTask(task.id ?? 0),
-              }))}
-            />
-          </FormControl>
-          <Button onClick={handleCreateMentorship} mr={1} mt={1} appearance="primary">Create</Button>
-          <Button onClick={() => setOpen(false)} danger mt={1}>Cancel</Button>
-        </FullScreenModal>
+        </TaskDialog>
         <CardBase>
           <ListTable headers={mentorshipHeaders} rows={[]} />
         </CardBase>

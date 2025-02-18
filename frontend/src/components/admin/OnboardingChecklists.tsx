@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Text, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, Container, CardBase, FileUploader } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Text, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, Container, CardBase, FileUploader, TaskDialog } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -314,7 +314,15 @@ const AdminMainTasks = () => {
 
       {/* Create Task Modal */}
       {createTask && (
-        <FullScreenModal isOpen={Boolean(createTask)} title="Create Main Task" onRequestClose={() => setCreateTask(null)}>
+        <TaskDialog
+        id="create-task-dialog" 
+        isOpen={Boolean(createTask)} 
+        title="Create Main Task" 
+        onRequestClose={() => setCreateTask(null)}
+        closeButtonLabel="Cancel"
+        primaryButtonLabel="Create"
+        onPrimaryAction={handleCreate}
+        shouldCloseOnOverlayClickOrEsc={true}>
           <FormControl label="Name" fieldId="name">
             <TextField
               type="text"
@@ -343,15 +351,21 @@ const AdminMainTasks = () => {
             />
           </FormControl>
           <div className="flex gap-2">
-            <Button onClick={handleCreate} mr={1} mt={1} appearance="primary"> Create </Button>
-            <Button onClick={() => setCreateTask(null)} danger mt={1}> Cancel </Button>
           </div>
-        </FullScreenModal>
+        </TaskDialog>
       )}
 
       {/* Edit Task Modal */}
       {editTask && (
-        <FullScreenModal isOpen={Boolean(editTask)} title="Edit Main Task" onRequestClose={() => setEditTask(null)}>
+        <TaskDialog
+        id="edit-task-dialog"
+        isOpen={Boolean(editTask)}
+        title="Edit Main Task"
+        onRequestClose={() => setEditTask(null)}
+        closeButtonLabel="Cancel"
+        primaryButtonLabel="Save"
+        onPrimaryAction={handleUpdate}
+        shouldCloseOnOverlayClickOrEsc={true}>
           <FormControl label="Name" fieldId="edit-name">
             <TextField
               type="text"
@@ -379,22 +393,25 @@ const AdminMainTasks = () => {
               className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </FormControl>
-          <div className="flex gap-2">
-            <Button onClick={handleUpdate} mr={1} mt={1} appearance="primary"> Save </Button>
-            <Button onClick={() => setEditTask(null)} danger mt={1}> Cancel </Button>
-          </div>
-        </FullScreenModal>
+        </TaskDialog>
       )}
 
       {/* Delete Confirmation Modal */}
       {deleteTask && (
-        <FullScreenModal isOpen={Boolean(deleteTask)} title="Confirm Delete" onRequestClose={() => setDeleteTask(null)}>
+        <TaskDialog
+        id="delete-task-dialog"
+        isOpen={Boolean(deleteTask)}
+        title="Confirm Delete"
+        onRequestClose={() => setDeleteTask(null)}
+        closeButtonLabel="Cancel"
+        primaryButtonLabel="Delete"
+        danger={true}
+        onPrimaryAction={handleDelete}
+        shouldCloseOnOverlayClickOrEsc={true}>
           <Paragraph>Are you sure you want to delete {deleteTask.name}?</Paragraph>
           <div className="flex gap-2">
-            <Button onClick={handleDelete} danger mr={1} mt={0.5}> Delete </Button>
-            <Button onClick={() => setDeleteTask(null)} appearance="primary" mt={0.5}> Cancel </Button>
           </div>
-        </FullScreenModal>
+        </TaskDialog>
       )}
 
       {/* View Sub Tasks Modal */}
@@ -456,7 +473,16 @@ const AdminMainTasks = () => {
 
       {/* Create Sub Task Modal */}
       {createSubTask && (
-        <FullScreenModal isOpen={Boolean(createSubTask)} title="Create Sub Task" onRequestClose={() => setCreateSubTask(null)}>
+        <TaskDialog
+        id="create-sub-task-dialog"
+        isOpen={Boolean(createSubTask)}
+        title="Create Sub Task"
+        onRequestClose={() => setCreateSubTask(null)}
+        closeButtonLabel="Cancel"
+        primaryButtonLabel="Create"
+        onPrimaryAction={handleCreateSubTask}
+        shouldCloseOnOverlayClickOrEsc={true}
+        >
           <FormControl label="Name" fieldId="sub-task-name">
             <TextField
               type="text"
@@ -509,16 +535,21 @@ const AdminMainTasks = () => {
               </div>
             ))}
           </FormControl>
-          <div className="flex gap-2">
-            <Button onClick={handleCreateSubTask} mr={0.5} mt={1} appearance="primary"> Create </Button>
-            <Button onClick={() => setCreateSubTask(null)} mt={1} danger> Cancel </Button>
-          </div>
-        </FullScreenModal>
+        </TaskDialog>
       )}
 
       {/* Edit Sub Task Modal */}
       {editSubTask && (
-        <FullScreenModal isOpen={Boolean(editSubTask)} title="Edit Sub Task" onRequestClose={() => setEditSubTask(null)}>
+        <TaskDialog
+        id="edit-sub-task-modal"
+        isOpen={Boolean(editSubTask)}
+        title="Edit Sub Task"
+        onRequestClose={() => setEditSubTask(null)}
+        closeButtonLabel="Cancel"
+        primaryButtonLabel="Save"
+        onPrimaryAction={handleUpdateSubTask}
+        shouldCloseOnOverlayClickOrEsc={true}
+        >
           <FormControl label="Name" fieldId="edit-sub-task-name">
             <TextField
               type="text"
@@ -601,22 +632,23 @@ const AdminMainTasks = () => {
               </div>
             ))}
           </FormControl>
-          <div className="flex gap-2">
-            <Button onClick={handleUpdateSubTask} mr={0.5} mt={1} appearance="primary"> Save </Button>
-            <Button onClick={() => setEditSubTask(null)} mt={1} danger> Cancel </Button>
-          </div>
-        </FullScreenModal>
+        </TaskDialog>
       )}
       
       {/* Delete Sub Task Confirmation Modal */}
       {deleteSubTask && (
-        <FullScreenModal isOpen={Boolean(deleteSubTask)} title="Confirm Delete" onRequestClose={() => setDeleteSubTask(null)}>
+        <TaskDialog
+        id="delete-sub-task-dialog"
+        isOpen={Boolean(deleteSubTask)}
+        title="Confirm Delete"
+        onRequestClose={() => setDeleteSubTask(null)}
+        closeButtonLabel="Cancel"
+        primaryButtonLabel="Delete"
+        danger={true}
+        onPrimaryAction={handleDeleteSubTask}
+        shouldCloseOnOverlayClickOrEsc={true}>
           <Paragraph>Are you sure you want to delete {deleteSubTask.name}?</Paragraph>
-          <div className="flex gap-2">
-            <Button onClick={handleDeleteSubTask} mt={1} mr={1} danger> Delete </Button>
-            <Button onClick={() => setDeleteSubTask(null)} mt={1} appearance="primary"> Cancel </Button>
-          </div>
-        </FullScreenModal>
+        </TaskDialog>
       )}
       </Container>
     </div>
