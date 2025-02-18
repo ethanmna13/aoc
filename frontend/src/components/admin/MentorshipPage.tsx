@@ -1,4 +1,4 @@
-import { Button, CardBase, Container, DropdownButton, FormControl, FullScreenModal, ListTable, PageTitle, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
+import { Button, CardBase, Container, FormControl, ListTable, PageTitle, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +16,15 @@ interface Mentees {
     id?: number;
     name: string;
     email: string;
+}
+
+interface Mentorship {
+  id: number;
+  mentor_name: string;
+  mentee_name: string;
+  assigned_main_tasks: string;
+  status: string;
+  submissions: string;
 }
 
 interface MainTask {
@@ -68,12 +77,11 @@ const MentorshipPage = () => {
   const [createMentorship, setCreateMentorship] = useState<{
     mentorID: number;
     menteeID: number;
-    assignedMainTasks: { mainTaskId: number; subTasks: number[] }[];
   }>({
     mentorID: 0,
     menteeID: 0,
-    assignedMainTasks: [],
   });
+  const [mentorships, setMentorships] = useState<Mentorship[]>([]);
   const [isOpen, setOpen] = React.useState<boolean>(false);
   const token = localStorage.getItem('authToken');
 
@@ -95,6 +103,7 @@ const MentorshipPage = () => {
           fetchMentors();
           fetchMentees();
           fetchMainTasks();
+          fetchMentorships();
         }
       } catch (err) {
         setError("Invalid token");
@@ -128,6 +137,18 @@ const MentorshipPage = () => {
     }
   };
 
+  const fetchMentorships = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/v1/mentorships", {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMentorships(response.data);
+    } catch (err) {
+      setError("Failed to fetch mentorships");
+    }
+  };
+
   const fetchMainTasks = async () => {
     try {
       const response = await axios.get("http://localhost:3000/api/v1/admin/main_tasks", {
@@ -143,46 +164,22 @@ const MentorshipPage = () => {
   const handleCreateMentorship = async () => {
     try {
       const response = await axios.post("http://localhost:3000/api/v1/mentorships", {
-        mentor_id: createMentorship.mentorID,
-        mentee_id: createMentorship.menteeID,
+        mentors_id: createMentorship.mentorID,
+        mentees_id: createMentorship.menteeID,
         status: "Pending",
-        main_tasks: createMentorship.assignedMainTasks.map(task => task.mainTaskId), 
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const mentorshipId = response.data.id;
-
-      for (const task of createMentorship.assignedMainTasks) {
-        await axios.post("http://localhost:3000/api/v1/assigned_main_tasks", {
-          mentorships_id: mentorshipId,
-          main_task_id: task.mainTaskId,
-          main_task_name: mainTasks.find(t => t.id === task.mainTaskId)?.name,
-          main_task_status: "Pending",
-        }, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        for (const subTaskId of task.subTasks) {
-          await axios.post("http://localhost:3000/api/v1/assigned_sub_tasks", {
-            mentorships_id: mentorshipId,
-            sub_task_id: subTaskId,
-            assigned_main_tasks_id: task.mainTaskId,
-            sub_task_status: "Pending",
-          }, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        }
-      }
-
+  
       alert("Mentorship created successfully");
       setCreateMentorship({
         mentorID: 0,
         menteeID: 0,
-        assignedMainTasks: [],
       });
       setOpen(false);
 
+      fetchMentorships();
+  
     } catch (error) {
       setError("Failed to create mentorship");
     }
@@ -202,6 +199,18 @@ const MentorshipPage = () => {
       { value: mentee.id },
       { value: mentee.name },
       { value: mentee.email },
+    ],
+  }));
+
+  const mentorshipRows = mentorships.map(mentorship => ({
+    cells: [
+      { value: mentorship.id },
+      { value: mentorship.mentor_name },
+      { value: mentorship.mentee_name },
+      { value: mentorship.assigned_main_tasks },
+      { value: mentorship.status },
+      { value: mentorship.submissions },
+      { value: "Actions", alignRight: true },
     ],
   }));
 
@@ -253,7 +262,7 @@ const MentorshipPage = () => {
           </FormControl>
         </TaskDialog>
         <CardBase>
-          <ListTable headers={mentorshipHeaders} rows={[]} />
+          <ListTable headers={mentorshipHeaders} rows={mentorshipRows} />
         </CardBase>
       </Container>
     </div>

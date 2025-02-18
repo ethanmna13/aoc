@@ -31,6 +31,6 @@
 /public/assets
 
 # Ignore master key for decrypting credentials and more.
-/config/master.key
+# /config/master.key
 
-.env
+# .env
