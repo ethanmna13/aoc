@@ -1,4 +1,4 @@
-import { Button, CardBase, Container, FormControl, ListTable, PageTitle, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
+import { Button, CardBase, Container, FormControl, FullScreenModal, ListTable, PageTitle, Paragraph, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +28,36 @@ interface Mentorship {
   mentee_email: string;
 }
 
+interface MainTask {
+  id: number;
+  name: string;
+  description: string;
+  deadline: string;
+  users_id?: number;
+  user_name?: string; 
+  subTasks?: SubTask[];
+}
+
+interface SubTask {
+  id?: number;
+  name: string;
+  description: string;
+  deadline: string;
+  main_tasks_id?: number;
+  users_id?: number;
+  user_name?: string;
+  attachments?: any[];
+}
+
+interface AssignedMainTask {
+  id: number;
+  mentorship_id: number,
+  mentor_name: string,
+  mentee_name: string,
+  name: string,
+  status: string
+}
+
 interface CustomJwtPayload {
   id: number;
   name: string;
@@ -50,12 +80,25 @@ const MentorshipPage = () => {
   const [mentors, setMentors] = useState<Mentors[]>([]);
   const [mentees, setMentees] = useState<Mentees[]>([]);
   const [mentorships, setMentorships] = useState<Mentorship[]>([]);
+  const [selectedMentorship, setSelectedMentorship] = useState<Mentorship | null>(null);
   const [isAssignOpen, setAssignOpen] = React.useState<boolean>(false);
   const [isEditOpen, setEditOpen] = React.useState<boolean>(false);
   const [isDeleteOpen, setDeleteOpen] = React.useState<boolean>(false);
   const [createMentorship, setCreateMentorship] = useState<{ mentorID: number | null, menteeID: number | null }>({ mentorID: null, menteeID: null });
   const [editMentorship, setEditMentorship] = useState<{ id: number | null, mentorID: number | null, menteeID: number | null }>({ id: null, mentorID: null, menteeID: null });
   const [deleteMentorshipId, setDeleteMentorshipId] = useState<number | null>(null);
+  const [mainTasks, setMainTasks] = useState<MainTask[]>([]);
+  const [selectedMainTask, setSelectedMainTask] = useState<MainTask | null>(null);
+  const [subTasks, setSubTasks] = useState<any[]>([]);
+  const [viewMainTasksModalOpen, setViewMainTasksModalOpen] = useState<boolean>(false);
+  const [viewSubTasksModalOpen, setViewSubTasksModalOpen] = useState<boolean>(false);
+  const [selectedMentorshipId, setSelectedMentorshipId] = useState<number | null>(null);
+  const [assignedMainTasks, setAssignedMainTasks] = useState<AssignedMainTask[]>([]);
+  const [checkedMainTasks, setCheckedMainTasks] = useState<{ [key: number]: boolean }>({});
+  const [assignedSubTasks, setAssignedSubTasks] = useState<any[]>([]);
+  const [selectedAssignedMainTaskId, setSelectedAssignedMainTaskId] = useState<number | null>(null);
+  const [viewAssignedSubTasksModalOpen, setViewAssignedSubTasksModalOpen] = useState<boolean>(false);
+  const [checkedSubTasks, setCheckedSubTasks] = useState<{ [key: number]: boolean }>({});
   const token = localStorage.getItem('authToken');
 
 
@@ -77,6 +120,7 @@ const MentorshipPage = () => {
           fetchMentors();
           fetchMentees();
           fetchMentorships();
+          fetchAssignedMainTasks(); 
         }
       } catch (err) {
         setError("Invalid token");
@@ -196,6 +240,143 @@ const MentorshipPage = () => {
     setAssignOpen(true); 
   };
 
+  const fetchMainTasks = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/v1/admin/main_tasks", {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setMainTasks(response.data);
+    } catch (err) {
+      setError("Failed to fetch main tasks");
+    }
+  };
+
+  const fetchSubTasks = async (mainTaskId: number) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/v1/admin/main_tasks/${mainTaskId}/sub_tasks`, {
+        withCredentials: true,
+        headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+      setSubTasks(response.data);
+    } catch (err) {
+      setError("Failed to fetch sub tasks");
+    }
+  };
+
+  const fetchAssignedMainTasks = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/v1/assigned_main_tasks", {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAssignedMainTasks(response.data);
+    } catch (err) {
+      setError("Failed to fetch assigned main tasks");
+    }
+  };
+  
+  const fetchAssignedSubTasks = async (assignedMainTaskId: number) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/v1/assigned_sub_tasks?assigned_main_task_id=${assignedMainTaskId}`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAssignedSubTasks(response.data);
+    } catch (err) {
+      setError("Failed to fetch assigned sub tasks");
+    }
+  };
+
+  const handleUnassignMainTask = async (assignedMainTaskId: number) => {
+    try {
+      await axios.delete(`http://localhost:3000/api/v1/assigned_main_tasks/${assignedMainTaskId}`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchAssignedMainTasks();
+    } catch (err) {
+      setError("Failed to unassign main task");
+    }
+  };
+  
+  const handleUnassignSubTask = async (assignedSubTaskId: number) => {
+    try {
+      await axios.delete(`http://localhost:3000/api/v1/assigned_sub_tasks/${assignedSubTaskId}`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchAssignedSubTasks(selectedAssignedMainTaskId!);
+    } catch (err) {
+      setError("Failed to unassign sub task");
+    }
+  };
+
+  const handleMainTaskCheckboxChange = (mainTaskId: number, isChecked: boolean) => {
+    setCheckedMainTasks((prev) => ({ ...prev, [mainTaskId]: isChecked }));
+
+    const mainTask = mainTasks.find((task) => task.id === mainTaskId);
+    if (mainTask && mainTask.subTasks) {
+      const newCheckedSubTasks = { ...checkedSubTasks };
+      mainTask.subTasks.forEach((subTask) => {
+        newCheckedSubTasks[subTask.id!] = isChecked;
+      });
+      setCheckedSubTasks(newCheckedSubTasks);
+    }
+  };
+
+  const handleSubTaskCheckboxChange = (subTaskId: number, isChecked: boolean) => {
+    setCheckedSubTasks((prev) => ({ ...prev, [subTaskId]: isChecked }));
+  };
+
+  const handleAssignTasks = async () => {
+    if (!selectedMentorshipId) {
+      setError("Please select a mentorship");
+      return;
+    }
+
+    const selectedMainTaskIds = Object.keys(checkedMainTasks)
+    .filter((key) => checkedMainTasks[Number(key)])
+    .map((key) => Number(key));
+
+    const selectedSubTaskIds = Object.keys(checkedSubTasks)
+    .filter((key) => checkedSubTasks[Number(key)])
+    .map((key) => Number(key));
+
+    try {
+      const assignedMainTasksResponse = await axios.post("http://localhost:3000/api/v1/assigned_main_tasks", 
+      {
+        mentorships_id: selectedMentorshipId,
+        main_tasks_ids: selectedMainTaskIds
+      }, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const assignedMainTasks = assignedMainTasksResponse.data.assigned_main_tasks;
+
+      for (const assignedMainTask of assignedMainTasks) {
+      await axios.post("http://localhost:3000/api/v1/assigned_sub_tasks", {
+        mentorships_id: selectedMentorshipId,
+        sub_task_ids: selectedSubTaskIds,
+        assigned_main_task_id: assignedMainTask.id
+      }, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+
+      setViewMainTasksModalOpen(false);
+      fetchAssignedMainTasks();
+    } catch (err) {
+      setError("Failed to assign tasks");
+    }
+  };
+
   const mentorshipRows = mentorships.map(mentorship => ({
     cells: [
       { value: mentorship.id },
@@ -207,11 +388,130 @@ const MentorshipPage = () => {
         value: (
           <div>
             <Button onClick={() => handleEditMentorship(mentorship.id)}  appearance="primary" small>Edit</Button>
-            <Button onClick={() => handleDeleteMentorship(mentorship.id)} danger small ml={0.5}>Delete</Button>
+            <Button onClick={() => handleDeleteMentorship(mentorship.id)} danger small ml={0.5} mr={0.5}>Delete</Button>
+            <Button
+              onClick={() => {
+                if (mentorship.id) {
+                  setSelectedMentorship(mentorship)
+                  setSelectedMentorshipId(mentorship.id);
+                  fetchMainTasks();
+                  setViewMainTasksModalOpen(true);
+                } else {
+                  console.error("Mentorship ID is undefined");
+                }
+              }}
+              small
+            >
+              View Assigned Tasks
+            </Button>
           </div>
         ),
         alignRight: true
       },
+    ],
+  }));
+
+  const mainTaskRows = mainTasks.map((mainTask) => ({
+    checked: checkedMainTasks[mainTask.id!] || false,
+    onChangeCheckBox: (e: React.ChangeEvent<HTMLInputElement>) =>
+      handleMainTaskCheckboxChange(mainTask.id!, e.target.checked),
+    cells: [
+      { value: mainTask.id },
+      { value: mainTask.name },
+      { value: mainTask.description },
+      { value: mainTask.deadline },
+      { value: mainTask.user_name || "Unknown" },
+      {
+        value: (
+          <Button
+            onClick={() => {
+              if (mainTask.id) {
+                setSelectedMainTask(mainTask);
+                fetchSubTasks(mainTask.id);
+                setViewSubTasksModalOpen(true);
+              }
+            }}
+            small
+          >
+            View Sub Tasks
+          </Button>
+        ),
+        alignRight: true,
+      },
+    ],
+  }));
+
+  const subTaskRows = subTasks.map((subTask) => ({
+    checked: checkedSubTasks[subTask.id!] || false,
+    onChangeCheckBox: (e: React.ChangeEvent<HTMLInputElement>) =>
+      handleSubTaskCheckboxChange(subTask.id!, e.target.checked),
+    cells: [
+      { value: subTask.name },
+      { value: subTask.description },
+      { value: subTask.deadline },
+      { value: subTask.user_name || "Unknown" },
+      {
+        value: (
+          <div>
+            {subTask.attachments?.map((attachment: any, index: number) => (
+              <a
+                key={index}
+                href={attachment.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {attachment.filename}
+              </a>
+            ))}
+          </div>
+        ),
+      },
+    ],
+  }));
+
+  const assignedMainTaskRows = assignedMainTasks.map(task => ({
+    cells: [
+      { value: task.id! },
+      { value: task.mentor_name },
+      { value: task.mentee_name },
+      { value: task.name },
+      { value: task.status },
+      {
+        value: (
+          <div>
+            <Button onClick={() => handleUnassignMainTask(task.id)} small danger mr={0.5}>Unassign</Button>
+            <Button
+              onClick={() => {
+                  setSelectedAssignedMainTaskId(task.id!);
+                  fetchAssignedSubTasks(task.id);
+                  setViewAssignedSubTasksModalOpen(true);
+              }}
+              small
+            >
+              View Assigned Sub Tasks
+            </Button>
+          </div>
+        ),
+        alignRight: true
+      }
+    ],
+  }));
+  
+  const assignedSubTaskRows = assignedSubTasks.map(task => ({
+    cells: [
+      { value: task.id },
+      { value: task.name },
+      { value: `${task.mentorship.mentor_name} & ${task.mentorship.mentee_name}` },
+      { value: task.status },
+      { value: task.submissions || "N/A" },
+      {
+        value: (
+          <div>
+            <Button onClick={() => handleUnassignSubTask(task.id)} small danger mr={0.5}>Unassign</Button>
+          </div>
+        ),
+        alignRight: true
+      }
     ],
   }));
 
@@ -220,7 +520,7 @@ const MentorshipPage = () => {
       {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
       <Container>
         <PageTitle mt={1} >Mentorships</PageTitle>
-        <Button onClick={() => setAssignOpen(true)} mt={0.5} mb={1} appearance="primary">Assign</Button>
+        <Button onClick={handleAssignClick} mt={0.5} mb={1} appearance="primary">Assign a Mentorship</Button>
         <TaskDialog 
           id="assign-mentorships"
           isOpen={isAssignOpen}
@@ -305,7 +605,106 @@ const MentorshipPage = () => {
         <CardBase>
           <ListTable headers={mentorshipHeaders} rows={mentorshipRows} />
         </CardBase>
+        <PageTitle mt={1} >Assigned Tasks</PageTitle>
+        <CardBase>
+        <ListTable
+          headers={[
+            { value: 'ID' },
+            { value: 'Mentorship Name' },
+            { value: 'Task Name' },
+            { value: 'Status' },
+            { value: 'Actions', alignRight: true }
+          ]}
+          rows={assignedMainTaskRows}
+        />
+      </CardBase>
       </Container>
+
+      {/* View Main Tasks Modal */}
+      {viewMainTasksModalOpen && (
+        <FullScreenModal
+        isOpen={viewMainTasksModalOpen}
+        title={`${selectedMentorship?.mentor_name} & ${selectedMentorship?.mentee_name}'s Tasks`}
+        onRequestClose={() => setViewMainTasksModalOpen(false)}
+        >
+          <CardBase ma={1}>
+            <PageTitle>Main Tasks</PageTitle>
+            {mainTasks.length === 0 ? (
+              <Paragraph>No main tasks available.</Paragraph>
+            ) : (
+              <ListTable
+              withCheckBox
+                headers={[
+                  { value: 'ID' },
+                  { value: 'Name' },
+                  { value: 'Description' },
+                  { value: 'Deadline' },
+                  { value: 'Created By' },
+                  { value: 'Actions', alignRight: true}
+                ]}
+                rows={mainTaskRows}
+              />
+            )}
+          </CardBase>
+          <Button onClick={() => setViewMainTasksModalOpen(false)} ma={0.5}>Cancel</Button>
+          <Button onClick={handleAssignTasks} appearance="primary" ma={0.5}>Assign</Button>
+        </FullScreenModal>
+      )}
+
+      {/* View Sub Tasks Modal */}
+      {viewSubTasksModalOpen && (
+        <FullScreenModal
+        isOpen={viewSubTasksModalOpen}
+        title={`Sub Tasks for ${selectedMainTask?.name}`}
+        onRequestClose={() => setViewSubTasksModalOpen(false)}
+        >
+          <CardBase ma={1}>
+            {subTasks.length === 0 ? (
+              <Paragraph>No sub-tasks available.</Paragraph>
+            ) : (
+              <ListTable withCheckBox={true}
+                headers={[
+                  { value: 'Name' },
+                  { value: 'Description' },
+                  { value: 'Deadline' },
+                  { value: 'Created By' },
+                  { value: 'Attachments' }
+                ]}
+                rows={subTaskRows}
+              />
+            )}
+          </CardBase>
+          <Button onClick={() => setViewSubTasksModalOpen(false)} ma={0.5}>Close</Button>
+        </FullScreenModal>
+      )}
+
+      {viewAssignedSubTasksModalOpen && (
+        <FullScreenModal
+          isOpen={viewAssignedSubTasksModalOpen}
+          title={`Assigned Sub Tasks`}
+          onRequestClose={() => setViewAssignedSubTasksModalOpen(false)}
+        >
+          <CardBase ma={1}>
+            <PageTitle>Assigned Sub Tasks</PageTitle>
+            {assignedSubTasks.length === 0 ? (
+              <Paragraph>No sub-tasks assigned.</Paragraph>
+            ) : (
+              <ListTable
+                headers={[
+                  { value: 'ID' },
+                  { value: 'Name' },
+                  { value: 'Mentorship' },
+                  { value: 'Status' },
+                  { value: 'Submissions' },
+                  { value: 'Actions', alignRight: true }
+                ]}
+                rows={assignedSubTaskRows}
+              />
+            )}
+          </CardBase>
+          <Button onClick={() => setViewAssignedSubTasksModalOpen(false)} ma={0.5}>Close</Button>
+        </FullScreenModal>
+      )}
     </div>
   );
 };
