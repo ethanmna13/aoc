@@ -4,8 +4,27 @@ class Api::V1::AssignedSubTasksController < ApplicationController
   before_action :set_mentorship, only: [ :create ]
 
   def index
-    assigned_sub_tasks = AssignedSubTask.includes(:assigned_main_task, :sub_task, :mentorship).all
-    render json: assigned_sub_tasks, include: [ :assigned_main_task, :sub_task, :mentorship ], status: :ok
+    assigned_sub_tasks = AssignedSubTask.includes(mentorship: [ :mentor, :mentee ], assigned_main_task: :main_task, sub_task: :user).all
+
+    assigned_sub_tasks_with_names = assigned_sub_tasks.map do |task|
+      {
+        id: task.id,
+        mentorships_id: task.mentorships_id,
+        mentorship_name: "#{task.mentorship.mentor.name} & #{task.mentorship.mentee.name}",
+        assigned_main_tasks_id: task.assigned_main_tasks_id,
+        sub_task_id: task.sub_task_id,
+        sub_task_name: task.sub_task.name,
+        status: task.status,
+        submissions: task.submissions.map do |submissions|
+          {
+            url: url_for(submissions),
+            filename: submissions.filename.to_s
+          }
+        end
+      }
+    end
+
+    render json: assigned_sub_tasks_with_names, status: :ok
   end
 
   def create
@@ -45,6 +64,9 @@ class Api::V1::AssignedSubTasksController < ApplicationController
   private
 
   def set_mentorship
-    @mentorship = Mentorship.find(params[:mentorships_id])
+    @mentorship = Mentorship.find_by(id: params[:mentorships_id])
+    unless @mentorship
+      render json: { error: "Mentorship with ID #{params[:mentorships_id]} does not exist" }, status: :not_found
+    end
   end
 end
