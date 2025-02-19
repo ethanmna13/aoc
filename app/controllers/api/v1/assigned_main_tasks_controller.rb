@@ -4,14 +4,26 @@ class Api::V1::AssignedMainTasksController < ApplicationController
   before_action :set_mentorship, only: [ :create ]
 
   def index
-    assigned_main_tasks = AssignedMainTask.includes(:mentorship, :main_task).all
-    render json: assigned_main_tasks.map, include: [ :mentorship, :main_task ], status: :ok
+    assigned_main_tasks = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user).all
+
+    assigned_main_tasks_with_names = assigned_main_tasks.map do |task|
+      {
+        id: task.id,
+        mentorships_id: task.mentorships_id,
+        mentorship_name: "#{task.mentorship.mentor.name} & #{task.mentorship.mentee.name}",
+        main_task_id: task.main_tasks_id,
+        main_task_name: task.main_task.name,
+        status: task.status
+      }
+    end
+
+    render json: assigned_main_tasks_with_names, status: :ok
   end
 
   def create
     main_tasks_ids = params[:main_tasks_ids]
 
-        existing_assignments = AssignedMainTask.where(mentorships_id: @mentorship.id, main_tasks_id: main_tasks_ids)
+    existing_assignments = AssignedMainTask.where(mentorships_id: @mentorship.id, main_tasks_id: main_tasks_ids)
     if existing_assignments.any?
       render json: { error: "One or more main tasks are already assigned to this mentorship" }, status: :unprocessable_entity
       return

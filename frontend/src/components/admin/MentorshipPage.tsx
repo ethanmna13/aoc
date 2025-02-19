@@ -46,16 +46,27 @@ interface SubTask {
   main_tasks_id?: number;
   users_id?: number;
   user_name?: string;
-  attachments?: any[];
+  attachments?: File[];
 }
 
 interface AssignedMainTask {
   id: number;
-  mentorship_id: number,
-  mentor_name: string,
-  mentee_name: string,
-  name: string,
-  status: string
+  mentorships_id: number;
+  mentorship_name: string;
+  main_task_id: number;
+  main_task_name: string;
+  status: string;
+}
+
+interface AssignedSubTask {
+  id: number;
+  mentorships_id: number;
+  mentorship_name: string;
+  assigned_main_tasks_id: number;
+  sub_task_id: number;
+  sub_task_name: string;
+  status: string;
+  submissions?: File[];
 }
 
 interface CustomJwtPayload {
@@ -87,6 +98,8 @@ const MentorshipPage = () => {
   const [createMentorship, setCreateMentorship] = useState<{ mentorID: number | null, menteeID: number | null }>({ mentorID: null, menteeID: null });
   const [editMentorship, setEditMentorship] = useState<{ id: number | null, mentorID: number | null, menteeID: number | null }>({ id: null, mentorID: null, menteeID: null });
   const [deleteMentorshipId, setDeleteMentorshipId] = useState<number | null>(null);
+  const [unassignMainTask, setUnassignMainTask] = useState<AssignedMainTask | null>(null);
+  const [unassignSubTask, setUnassignSubTask] = useState<AssignedSubTask | null>(null);
   const [mainTasks, setMainTasks] = useState<MainTask[]>([]);
   const [selectedMainTask, setSelectedMainTask] = useState<MainTask | null>(null);
   const [subTasks, setSubTasks] = useState<any[]>([]);
@@ -95,12 +108,11 @@ const MentorshipPage = () => {
   const [selectedMentorshipId, setSelectedMentorshipId] = useState<number | null>(null);
   const [assignedMainTasks, setAssignedMainTasks] = useState<AssignedMainTask[]>([]);
   const [checkedMainTasks, setCheckedMainTasks] = useState<{ [key: number]: boolean }>({});
-  const [assignedSubTasks, setAssignedSubTasks] = useState<any[]>([]);
+  const [assignedSubTasks, setAssignedSubTasks] = useState<AssignedSubTask[]>([]);
   const [selectedAssignedMainTaskId, setSelectedAssignedMainTaskId] = useState<number | null>(null);
   const [viewAssignedSubTasksModalOpen, setViewAssignedSubTasksModalOpen] = useState<boolean>(false);
   const [checkedSubTasks, setCheckedSubTasks] = useState<{ [key: number]: boolean }>({});
   const token = localStorage.getItem('authToken');
-
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -166,6 +178,20 @@ const MentorshipPage = () => {
       setError("Failed to fetch mentorships");
     }
   };
+
+  const fetchAssignedMainTasks = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/v1/assigned_main_tasks", {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAssignedMainTasks(response.data);
+    } catch (err) {
+      setError("Failed to fetch assigned main tasks");
+    }
+  };
+
+  
 
   const handleCreateMentorship = async () => {
     if (!createMentorship.mentorID || !createMentorship.menteeID) {
@@ -267,18 +293,6 @@ const MentorshipPage = () => {
       setError("Failed to fetch sub tasks");
     }
   };
-
-  const fetchAssignedMainTasks = async () => {
-    try {
-      const response = await axios.get("http://localhost:3000/api/v1/assigned_main_tasks", {
-        withCredentials: true,
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setAssignedMainTasks(response.data);
-    } catch (err) {
-      setError("Failed to fetch assigned main tasks");
-    }
-  };
   
   const fetchAssignedSubTasks = async (assignedMainTaskId: number) => {
     try {
@@ -292,9 +306,10 @@ const MentorshipPage = () => {
     }
   };
 
-  const handleUnassignMainTask = async (assignedMainTaskId: number) => {
+  const handleUnassignMainTask = async () => {
+    if (!unassignMainTask) return;
     try {
-      await axios.delete(`http://localhost:3000/api/v1/assigned_main_tasks/${assignedMainTaskId}`, {
+      await axios.delete(`http://localhost:3000/api/v1/assigned_main_tasks/${unassignMainTask.id}`, {
         withCredentials: true,
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -304,9 +319,10 @@ const MentorshipPage = () => {
     }
   };
   
-  const handleUnassignSubTask = async (assignedSubTaskId: number) => {
+  const handleUnassignSubTask = async () => {
+    if (!unassignSubTask) return;
     try {
-      await axios.delete(`http://localhost:3000/api/v1/assigned_sub_tasks/${assignedSubTaskId}`, {
+      await axios.delete(`http://localhost:3000/api/v1/assigned_sub_tasks/${unassignSubTask.id}`, {
         withCredentials: true,
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -471,20 +487,19 @@ const MentorshipPage = () => {
 
   const assignedMainTaskRows = assignedMainTasks.map(task => ({
     cells: [
-      { value: task.id! },
-      { value: task.mentor_name },
-      { value: task.mentee_name },
-      { value: task.name },
+      { value: task.id },
+      { value: task.mentorship_name },
+      { value: task.main_task_name },
       { value: task.status },
       {
         value: (
           <div>
-            <Button onClick={() => handleUnassignMainTask(task.id)} small danger mr={0.5}>Unassign</Button>
+            <Button onClick={() => setUnassignMainTask(task)} small danger mr={0.5}>Unassign</Button>
             <Button
               onClick={() => {
-                  setSelectedAssignedMainTaskId(task.id!);
-                  fetchAssignedSubTasks(task.id);
-                  setViewAssignedSubTasksModalOpen(true);
+                setSelectedAssignedMainTaskId(task.id);
+                fetchAssignedSubTasks(task.id);
+                setViewAssignedSubTasksModalOpen(true);
               }}
               small
             >
@@ -500,14 +515,29 @@ const MentorshipPage = () => {
   const assignedSubTaskRows = assignedSubTasks.map(task => ({
     cells: [
       { value: task.id },
-      { value: task.name },
-      { value: `${task.mentorship.mentor_name} & ${task.mentorship.mentee_name}` },
+      { value: task.sub_task_name },
+      { value: task.mentorship_name},
       { value: task.status },
-      { value: task.submissions || "N/A" },
       {
         value: (
           <div>
-            <Button onClick={() => handleUnassignSubTask(task.id)} small danger mr={0.5}>Unassign</Button>
+            {task.submissions?.map((attachment: any, index: number) => (
+              <a
+                key={index}
+                href={attachment.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {attachment.filename}
+              </a>
+            ))}
+          </div>
+        ),
+      },
+      {
+        value: (
+          <div>
+            <Button onClick={() => setUnassignSubTask(task)} small danger mr={0.5}>Unassign</Button>
           </div>
         ),
         alignRight: true
@@ -705,6 +735,42 @@ const MentorshipPage = () => {
           <Button onClick={() => setViewAssignedSubTasksModalOpen(false)} ma={0.5}>Close</Button>
         </FullScreenModal>
       )}
+
+      {unassignMainTask && (
+              <TaskDialog
+                id="delete-user-dialog"
+                isOpen={Boolean(unassignMainTask)}
+                title="Confirm Delete"
+                onRequestClose={() => setUnassignMainTask(null)}
+                closeButtonLabel="Cancel"
+                primaryButtonLabel="Delete"
+                danger={true}
+                onPrimaryAction={handleUnassignMainTask}
+                shouldCloseOnOverlayClickOrEsc={false}
+                mobileButtonLayout="column"
+              >
+                <Paragraph>Are you sure you want to unassign {unassignMainTask.main_task_name} from {unassignMainTask.mentorship_name}?</Paragraph>
+              </TaskDialog>
+      )}
+
+      {unassignSubTask && (
+              <TaskDialog
+                id="delete-user-dialog"
+                isOpen={Boolean(unassignSubTask)}
+                title="Confirm Delete"
+                onRequestClose={() => setUnassignSubTask(null)}
+                closeButtonLabel="Cancel"
+                primaryButtonLabel="Delete"
+                danger={true}
+                onPrimaryAction={handleUnassignSubTask}
+                shouldCloseOnOverlayClickOrEsc={false}
+                mobileButtonLayout="column"
+              >
+                <Paragraph>Are you sure you want to unassign {unassignSubTask.sub_task_name} from {unassignSubTask.mentorship_name}?</Paragraph>
+              </TaskDialog>
+      )}
+
+
     </div>
   );
 };
