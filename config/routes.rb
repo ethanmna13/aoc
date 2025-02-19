@@ -5,6 +5,8 @@ Rails.application.routes.draw do
       devise_for :users,  controllers: {
         sessions: "api/v1/users/sessions"
       }
+      resources :assigned_main_tasks
+      resources :assigned_sub_tasks
       resources :mentorships
       namespace :admin do
         resources :users, only: [ :index, :update, :destroy, :create ] do
