@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Text, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, Container, CardBase, FileUploader, TaskDialog } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, Container, CardBase, FileUploader, TaskDialog, FloatingMessageBlock } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -23,6 +23,17 @@ interface MainTask {
   user_name?: string; 
 }
 
+interface SubTask {
+  id?: number;
+  name: string;
+  description: string;
+  deadline: string;
+  users_id?: number;
+  user_name?: string; 
+  attachments?: File[];
+}
+
+
 interface CustomJwtPayload {
   id: number;
   name: string;
@@ -30,11 +41,12 @@ interface CustomJwtPayload {
 }
 
 const AdminMainTasks = () => {
-  const [subTasks, setSubTasks] = useState<any[]>([]);
+  const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [viewSubTasksModalOpen, setViewSubTasksModalOpen] = useState<boolean>(false);
   const [selectedMainTask, setSelectedMainTask] = useState<MainTask | null>(null);
   const [mainTasks, setMainTasks] = useState<MainTask[]>([]);
   const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
   const [editTask, setEditTask] = useState<MainTask | null>(null);
   const [deleteTask, setDeleteTask] = useState<MainTask | null>(null);
   const [createTask, setCreateTask] = useState<MainTask | null>(null);
@@ -44,18 +56,19 @@ const AdminMainTasks = () => {
     name: string;
     description: string;
     deadline: string;
-    existingAttachments?: any[];
+    existingAttachments?: File[];
     attachments?: File[];
     removedAttachmentIds?: number[];
   } | null>(null);
-  const [deleteSubTask, setDeleteSubTask] = useState<any | null>(null);
-  const [createSubTask, setCreateSubTask] = useState<any | null>(null);
+  const [deleteSubTask, setDeleteSubTask] = useState<SubTask | null>(null);
+  const [createSubTask, setCreateSubTask] = useState<SubTask | null>(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
+      
       const token = localStorage.getItem('authToken');
       if (!token) {
         setError("No token found, please log in again");
@@ -72,7 +85,7 @@ const AdminMainTasks = () => {
         } else {
           fetchMainTasks();
         }
-      } catch (err) {
+      } catch {
         setError("Invalid token");
         navigate('/sign_in');
       } finally {
@@ -81,6 +94,7 @@ const AdminMainTasks = () => {
     };
   
     fetchCurrentUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const fetchSubTasks = async (mainTaskId: number) => {
@@ -92,7 +106,7 @@ const AdminMainTasks = () => {
       }
     });
       setSubTasks(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch sub tasks");
     }
   };
@@ -106,7 +120,7 @@ const AdminMainTasks = () => {
         }
       });
       setMainTasks(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch main tasks");
     }
   };
@@ -121,9 +135,11 @@ const AdminMainTasks = () => {
           Authorization: `Bearer ${token}`,
         }
     });
+      setSuccessMessage(`${taskWithUserId.name} successfully created.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       fetchMainTasks();
       setCreateTask(null);
-    } catch (err) {
+    } catch {
       setError("Failed to create main task");
     }
   };
@@ -137,9 +153,11 @@ const AdminMainTasks = () => {
           Authorization: `Bearer ${token}`, 
         }
       });
+      setSuccessMessage(`${editTask.name} successfully updated.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       fetchMainTasks();
       setEditTask(null);
-    } catch (err) {
+    } catch {
       setError("Failed to update main task");
     }
   };
@@ -153,16 +171,17 @@ const AdminMainTasks = () => {
           Authorization: `Bearer ${token}`
         }
       });
+      setSuccessMessage(`${deleteTask.name} successfully deleted.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       fetchMainTasks();
       setDeleteTask(null);
-    } catch (err) {
+    } catch {
       setError("Failed to delete main task");
     }
   };
 
   const handleCreateSubTask = async () => {
     if (!createSubTask || !selectedMainTask?.id || !currentUser ) {
-      console.error("Missing required data:", { createSubTask, selectedMainTask, currentUser }); 
       setError("User not logged in or invalid user ID");
       return;
     }
@@ -171,22 +190,15 @@ const AdminMainTasks = () => {
     formData.append('sub_task[name]', createSubTask.name);
     formData.append('sub_task[description]', createSubTask.description);
     formData.append('sub_task[deadline]', createSubTask.deadline);
-
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
   
     if (createSubTask.attachments) {
       (createSubTask.attachments as File[]).forEach((file: File) => {
         formData.append('sub_task[attachments][]', file);
       });
     }
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
   
     try {
-      const response = await axios.post(
+        await axios.post(
         `http://localhost:3000/api/v1/admin/main_tasks/${selectedMainTask.id}/sub_tasks`,
         formData,
         {
@@ -197,7 +209,8 @@ const AdminMainTasks = () => {
           },
         }
       );
-      console.log("Sub-task created successfully:", response.data);
+      setSuccessMessage(`${createSubTask.name} successfully created.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       fetchSubTasks(selectedMainTask.id);
       setCreateSubTask(null);
     } catch (err) {
@@ -260,7 +273,7 @@ const AdminMainTasks = () => {
       );
       fetchSubTasks(selectedMainTask.id);
       setDeleteSubTask(null);
-    } catch (err) {
+    } catch {
       setError("Failed to delete sub task");
     }
   };
@@ -307,7 +320,8 @@ const AdminMainTasks = () => {
       <Container>
       <PageTitle mt={1}>Manage Onboarding Checklists</PageTitle>
       <Button onClick={() => setCreateTask({ name: "", description: "", deadline: "", users_id: currentUser?.id })} mt={0.5} mb={1} appearance="primary"> Create Task </Button>
-      {error && <Text>{error}</Text>}
+      {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
+      {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
       <CardBase>
       <ListTable headers={headers} rows={taskRows}></ListTable>
       </CardBase>
