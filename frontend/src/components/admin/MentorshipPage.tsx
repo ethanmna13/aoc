@@ -1,4 +1,4 @@
-import { Button, CardBase, Container, FormControl, FullScreenModal, ListTable, PageTitle, Paragraph, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
+import { Button, CardBase, Container, FloatingMessageBlock, FormControl, FullScreenModal, ListTable, PageTitle, Paragraph, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -87,6 +87,7 @@ const mentorshipHeaders: TableHeader[] = [
 const MentorshipPage = () => {
   const [currentUser, setCurrentUser] = useState<{ name: string; role: string; id: number } | null>(null);
   const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
   const navigate = useNavigate();
   const [mentors, setMentors] = useState<Mentors[]>([]);
   const [mentees, setMentees] = useState<Mentees[]>([]);
@@ -102,7 +103,7 @@ const MentorshipPage = () => {
   const [unassignSubTask, setUnassignSubTask] = useState<AssignedSubTask | null>(null);
   const [mainTasks, setMainTasks] = useState<MainTask[]>([]);
   const [selectedMainTask, setSelectedMainTask] = useState<MainTask | null>(null);
-  const [subTasks, setSubTasks] = useState<any[]>([]);
+  const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [viewMainTasksModalOpen, setViewMainTasksModalOpen] = useState<boolean>(false);
   const [viewSubTasksModalOpen, setViewSubTasksModalOpen] = useState<boolean>(false);
   const [selectedMentorshipId, setSelectedMentorshipId] = useState<number | null>(null);
@@ -134,12 +135,13 @@ const MentorshipPage = () => {
           fetchMentorships();
           fetchAssignedMainTasks(); 
         }
-      } catch (err) {
+      } catch {
         setError("Invalid token");
         navigate('/sign_in');
       }
     };
     fetchCurrentUser();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const fetchMentors = async () => {
@@ -149,7 +151,7 @@ const MentorshipPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMentors(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch mentors");
     }
   };
@@ -161,7 +163,7 @@ const MentorshipPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMentees(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch mentees");
     }
   };
@@ -174,7 +176,7 @@ const MentorshipPage = () => {
       });
 
       setMentorships(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch mentorships");
     }
   };
@@ -186,7 +188,7 @@ const MentorshipPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAssignedMainTasks(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch assigned main tasks");
     }
   };
@@ -208,8 +210,10 @@ const MentorshipPage = () => {
       });
       setMentorships([...mentorships, response.data]);
       setAssignOpen(false);
+      setSuccessMessage(`Mentor ${createMentorship.mentorID} successfully assigned to ${createMentorship.menteeID}.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       fetchMentorships();
-    } catch (err) {
+    } catch {
       setError("Failed to create mentorship");
     }
   };
@@ -229,7 +233,9 @@ const MentorshipPage = () => {
       });
       setMentorships(mentorships.map(m => m.id === editMentorship.id ? response.data : m));
       setEditOpen(false);
-    } catch (err) {
+      setSuccessMessage(`Mentorship ${editMentorship.id} successfully updated.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch {
       setError("Failed to update mentorship");
     }
   };
@@ -248,7 +254,9 @@ const MentorshipPage = () => {
       });
       setMentorships(mentorships.filter(m => m.id !== deleteMentorshipId));
       setDeleteOpen(false);
-    } catch (err) {
+      setSuccessMessage(`Mentorship ${deleteMentorshipId} successfully deleted.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch {
       setError("Failed to delete mentorship");
     }
   };
@@ -275,7 +283,7 @@ const MentorshipPage = () => {
         }
       });
       setMainTasks(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch main tasks");
     }
   };
@@ -289,7 +297,7 @@ const MentorshipPage = () => {
       }
     });
       setSubTasks(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch sub tasks");
     }
   };
@@ -301,7 +309,7 @@ const MentorshipPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAssignedSubTasks(response.data);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch assigned sub tasks");
     }
   };
@@ -314,7 +322,9 @@ const MentorshipPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchAssignedMainTasks();
-    } catch (err) {
+      setSuccessMessage(`${unassignMainTask.main_task_name} successfully unassigned from ${unassignMainTask.mentorship_name}.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch {
       setError("Failed to unassign main task");
     }
   };
@@ -327,7 +337,9 @@ const MentorshipPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchAssignedSubTasks(selectedAssignedMainTaskId!);
-    } catch (err) {
+      setSuccessMessage(`${unassignSubTask.sub_task_name} successfully unassigned from ${unassignSubTask.mentorship_name}.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch {
       setError("Failed to unassign sub task");
     }
   };
@@ -388,7 +400,7 @@ const MentorshipPage = () => {
 
       setViewMainTasksModalOpen(false);
       fetchAssignedMainTasks();
-    } catch (err) {
+    } catch {
       setError("Failed to assign tasks");
     }
   };
@@ -412,8 +424,6 @@ const MentorshipPage = () => {
                   setSelectedMentorshipId(mentorship.id);
                   fetchMainTasks();
                   setViewMainTasksModalOpen(true);
-                } else {
-                  console.error("Mentorship ID is undefined");
                 }
               }}
               small
@@ -551,6 +561,8 @@ const MentorshipPage = () => {
       <Container>
         <PageTitle mt={1} >Mentorships</PageTitle>
         <Button onClick={handleAssignClick} mt={0.5} mb={1} appearance="primary">Assign a Mentorship</Button>
+        {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
+        {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
         <TaskDialog 
           id="assign-mentorships"
           isOpen={isAssignOpen}
