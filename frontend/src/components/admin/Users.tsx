@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Text, Button, TextField, Paragraph, Container, CardBase, FormControl, SelectBox, TaskDialog } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, TextField, Paragraph, Container, CardBase, FormControl, SelectBox, TaskDialog, FloatingMessageBlock } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -32,6 +32,7 @@ interface CustomJwtPayload {
 const AdminUsersPage = () => {
   const [users, setUsers] = useState<Users[]>([]);
   const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
   const [editUser, setEditUser] = useState<Users | null>(null);
   const [deleteUser, setDeleteUser] = useState<Users | null>(null);
   const [registerUser, setRegisterUser] = useState<Users>({
@@ -64,8 +65,8 @@ const AdminUsersPage = () => {
         } else {
           fetchUsers();
         }
-      } catch (err) {
-        setError("Invalid token");
+      } catch {
+        setError(`You are not logged in.`);
         navigate('/sign_in');
       }
     };
@@ -82,8 +83,8 @@ const AdminUsersPage = () => {
         },
       });
       setUsers(response.data);
-    } catch (err) {
-      setError("Failed to fetch users");
+    } catch {
+      setError(`Failed to fetch users`);
     }
   };
 
@@ -102,9 +103,11 @@ const AdminUsersPage = () => {
         role: 0,
         account_status: 0,
       });
+      setSuccessMessage(`${registerUser.name} successfully registered.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       toggle();
-    } catch (err) {
-      setError("Failed to register user");
+    } catch {
+      setError(`Failed to register user`);
     }
   };
 
@@ -118,9 +121,11 @@ const AdminUsersPage = () => {
         },
       });
       fetchUsers();
+      setSuccessMessage(`${editUser.name} successfully updated.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       setEditUser(null);
-    } catch (err) {
-      setError("Failed to update user");
+    } catch {
+      setError(`Failed to update user`);
     }
   };
 
@@ -134,9 +139,11 @@ const AdminUsersPage = () => {
         },
       });
       fetchUsers();
+      setSuccessMessage(`${deleteUser.name} successfully deleted.`);
+      setTimeout(() => setSuccessMessage(""), 3000);
       setDeleteUser(null);
-    } catch (err) {
-      setError("Failed to delete user");
+    } catch {
+      setError(`Failed to delete user`);
     }
   };
 
@@ -162,125 +169,126 @@ const AdminUsersPage = () => {
 
   return (
     <div>
-    {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
-    <Container>
-      <PageTitle mt={1}>Manage Users</PageTitle>
-      <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
-      {error && <Text>{error}</Text>}
-      <CardBase>
-        <ListTable headers={headers} rows={userRows}></ListTable>
-      </CardBase>
+      {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
+      <Container>
+        <PageTitle mt={1}>Manage Users</PageTitle>
+        <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
+        {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
+        {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
+        <CardBase>
+          <ListTable headers={headers} rows={userRows}></ListTable>
+        </CardBase>
 
-      <TaskDialog 
-        id="register-user-dialog" 
-        isOpen={isOpen} 
-        title="Register A User" 
-        onRequestClose={toggle} 
-        closeButtonLabel="Cancel" 
-        primaryButtonLabel="Register" 
-        danger={false} 
-        onPrimaryAction={handleRegister} 
-        shouldCloseOnOverlayClickOrEsc={true} 
-        mobileButtonLayout="column"
-      >
-        <FormControl label="Name" fieldId="name">
-          <TextField
-            type="text"
-            value={registerUser.name || ""}
-            onChange={(e) =>
-              setRegisterUser({ ...registerUser, name: e.target.value })
-            }
-          />
-        </FormControl>
-        <FormControl label="Email" fieldId="email">
-          <TextField
-            type="email"
-            value={registerUser.email || ""}
-            onChange={(e) =>
-              setRegisterUser({ ...registerUser, email: e.target.value })
-            }
-          />
-        </FormControl>
-        <FormControl label="Role" fieldId="role">
-          <SelectBox
-            id="role"
-            name="role"
-            options={[
-              { name: 'Admin', value: '0' }, 
-              { name: 'Mentor', value: '1' }, 
-              { name: 'Mentee', value: '2' } 
-            ]}
-            onChange={(e) => setRegisterUser({ ...registerUser, role: Number(e.target.value) })}
-          />
-        </FormControl>
-      </TaskDialog>
-
-      {editUser && (
-        <TaskDialog
-          id="edit-user-dialog"
-          isOpen={Boolean(editUser)}
-          title="Edit User"
-          onRequestClose={() => setEditUser(null)}
-          closeButtonLabel="Cancel"
-          primaryButtonLabel="Save"
-          onPrimaryAction={handleUpdate}
-          shouldCloseOnOverlayClickOrEsc={true}
+        <TaskDialog 
+          id="register-user-dialog" 
+          isOpen={isOpen} 
+          title="Register A User" 
+          onRequestClose={toggle} 
+          closeButtonLabel="Cancel" 
+          primaryButtonLabel="Register" 
+          danger={false} 
+          onPrimaryAction={handleRegister} 
+          shouldCloseOnOverlayClickOrEsc={true} 
           mobileButtonLayout="column"
         >
-          <FormControl label="Name" fieldId="edit-name">
+          <FormControl label="Name" fieldId="name">
             <TextField
               type="text"
-              value={editUser.name}
+              value={registerUser.name || ""}
               onChange={(e) =>
-                setEditUser({ ...editUser, name: e.target.value })
+                setRegisterUser({ ...registerUser, name: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Role" fieldId="edit-role">
+          <FormControl label="Email" fieldId="email">
+            <TextField
+              type="email"
+              value={registerUser.email || ""}
+              onChange={(e) =>
+                setRegisterUser({ ...registerUser, email: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl label="Role" fieldId="role">
             <SelectBox
-              id="edit-role"
+              id="role"
               name="role"
               options={[
                 { name: 'Admin', value: '0' }, 
                 { name: 'Mentor', value: '1' }, 
                 { name: 'Mentee', value: '2' } 
               ]}
-              onChange={(e) => setEditUser({ ...editUser, role: Number(e.target.value) })}
-            />
-          </FormControl>
-          <FormControl label="Account Status" fieldId="edit-status">
-            <SelectBox
-              id="edit-status"
-              name="status"
-              options={[
-                { name: 'Inactive', value: '0' },
-                { name: 'Active', value: '1' } 
-              ]}
-              onChange={(e) => setEditUser({ ...editUser, account_status: Number(e.target.value) })}
+              onChange={(e) => setRegisterUser({ ...registerUser, role: Number(e.target.value) })}
             />
           </FormControl>
         </TaskDialog>
-      )}
 
-      {deleteUser && (
-        <TaskDialog
-          id="delete-user-dialog"
-          isOpen={Boolean(deleteUser)}
-          title="Confirm Delete"
-          onRequestClose={() => setDeleteUser(null)}
-          closeButtonLabel="Cancel"
-          primaryButtonLabel="Delete"
-          danger={true}
-          onPrimaryAction={handleDelete}
-          shouldCloseOnOverlayClickOrEsc={false}
-          mobileButtonLayout="column"
-        >
-          <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
-        </TaskDialog>
-      )}
-    </Container>
-  </div>
-);
+        {editUser && (
+          <TaskDialog
+            id="edit-user-dialog"
+            isOpen={Boolean(editUser)}
+            title="Edit User"
+            onRequestClose={() => setEditUser(null)}
+            closeButtonLabel="Cancel"
+            primaryButtonLabel="Save"
+            onPrimaryAction={handleUpdate}
+            shouldCloseOnOverlayClickOrEsc={true}
+            mobileButtonLayout="column"
+          >
+            <FormControl label="Name" fieldId="edit-name">
+              <TextField
+                type="text"
+                value={editUser.name}
+                onChange={(e) =>
+                  setEditUser({ ...editUser, name: e.target.value })
+                }
+              />
+            </FormControl>
+            <FormControl label="Role" fieldId="edit-role">
+              <SelectBox
+                id="edit-role"
+                name="role"
+                options={[
+                  { name: 'Admin', value: '0' }, 
+                  { name: 'Mentor', value: '1' }, 
+                  { name: 'Mentee', value: '2' } 
+                ]}
+                onChange={(e) => setEditUser({ ...editUser, role: Number(e.target.value) })}
+              />
+            </FormControl>
+            <FormControl label="Account Status" fieldId="edit-status">
+              <SelectBox
+                id="edit-status"
+                name="status"
+                options={[
+                  { name: 'Inactive', value: '0' },
+                  { name: 'Active', value: '1' } 
+                ]}
+                onChange={(e) => setEditUser({ ...editUser, account_status: Number(e.target.value) })}
+              />
+            </FormControl>
+          </TaskDialog>
+        )}
+
+        {deleteUser && (
+          <TaskDialog
+            id="delete-user-dialog"
+            isOpen={Boolean(deleteUser)}
+            title="Confirm Delete"
+            onRequestClose={() => setDeleteUser(null)}
+            closeButtonLabel="Cancel"
+            primaryButtonLabel="Delete"
+            danger={true}
+            onPrimaryAction={handleDelete}
+            shouldCloseOnOverlayClickOrEsc={false}
+            mobileButtonLayout="column"
+          >
+            <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
+          </TaskDialog>
+        )}
+      </Container>
+    </div>
+  );
 };
 
 export default AdminUsersPage;
