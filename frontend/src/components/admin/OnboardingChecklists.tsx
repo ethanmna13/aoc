@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, Container, CardBase, FileUploader, TaskDialog, FloatingMessageBlock } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, FileUploader, TaskDialog, FloatingMessageBlock } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -29,8 +29,14 @@ interface SubTask {
   description: string;
   deadline: string;
   users_id?: number;
-  user_name?: string; 
-  attachments?: File[];
+  user_name?: string;
+  attachments?: Attachment[]; 
+}
+
+interface Attachment {
+  id: number;
+  url: string;
+  filename: string;
 }
 
 
@@ -46,6 +52,7 @@ const AdminMainTasks = () => {
   const [selectedMainTask, setSelectedMainTask] = useState<MainTask | null>(null);
   const [mainTasks, setMainTasks] = useState<MainTask[]>([]);
   const [error, setError] = useState<string>("");
+  const [newFiles, setNewFiles] = useState<File[]>([]);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [editTask, setEditTask] = useState<MainTask | null>(null);
   const [deleteTask, setDeleteTask] = useState<MainTask | null>(null);
@@ -56,7 +63,7 @@ const AdminMainTasks = () => {
     name: string;
     description: string;
     deadline: string;
-    existingAttachments?: File[];
+    existingAttachments?: Attachment[];
     attachments?: File[];
     removedAttachmentIds?: number[];
   } | null>(null);
@@ -102,9 +109,9 @@ const AdminMainTasks = () => {
       const response = await axios.get(`http://localhost:3000/api/v1/admin/main_tasks/${mainTaskId}/sub_tasks`, {
         withCredentials: true,
         headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setSubTasks(response.data);
     } catch {
       setError("Failed to fetch sub tasks");
@@ -181,7 +188,7 @@ const AdminMainTasks = () => {
   };
 
   const handleCreateSubTask = async () => {
-    if (!createSubTask || !selectedMainTask?.id || !currentUser ) {
+    if (!createSubTask || !selectedMainTask?.id || !currentUser) {
       setError("User not logged in or invalid user ID");
       return;
     }
@@ -191,14 +198,14 @@ const AdminMainTasks = () => {
     formData.append('sub_task[description]', createSubTask.description);
     formData.append('sub_task[deadline]', createSubTask.deadline);
   
-    if (createSubTask.attachments) {
-      (createSubTask.attachments as File[]).forEach((file: File) => {
+    if (newFiles) {
+      newFiles.forEach((file: File) => {
         formData.append('sub_task[attachments][]', file);
       });
     }
   
     try {
-        await axios.post(
+      await axios.post(
         `http://localhost:3000/api/v1/admin/main_tasks/${selectedMainTask.id}/sub_tasks`,
         formData,
         {
@@ -213,6 +220,7 @@ const AdminMainTasks = () => {
       setTimeout(() => setSuccessMessage(""), 3000);
       fetchSubTasks(selectedMainTask.id);
       setCreateSubTask(null);
+      setNewFiles([]); 
     } catch (err) {
       console.error("Failed to create sub-task:", err);
       setError("Failed to create sub task");
@@ -226,13 +234,13 @@ const AdminMainTasks = () => {
     formData.append('sub_task[name]', editSubTask.name);
     formData.append('sub_task[description]', editSubTask.description);
     formData.append('sub_task[deadline]', editSubTask.deadline);
-
-    if (editSubTask.attachments) {
-      Array.from(editSubTask.attachments as File[]).forEach((file: File) => {
+  
+    if (newFiles) {
+      newFiles.forEach((file: File) => {
         formData.append('sub_task[attachments][]', file);
       });
     }
-
+  
     if (editSubTask.removedAttachmentIds) {
       editSubTask.removedAttachmentIds.forEach((id: number) => {
         formData.append('sub_task[remove_attachment_ids][]', id.toString());
@@ -240,7 +248,7 @@ const AdminMainTasks = () => {
     }
   
     try {
-      const response = await axios.put(
+      await axios.put(
         `http://localhost:3000/api/v1/admin/main_tasks/${selectedMainTask.id}/sub_tasks/${editSubTask.id}`,
         formData,
         {
@@ -251,9 +259,10 @@ const AdminMainTasks = () => {
           },
         }
       );
-      console.log("Sub-task updated successfully:", response.data);
+      console.log("Sub-task updated successfully");
       fetchSubTasks(selectedMainTask.id);
       setEditSubTask(null);
+      setNewFiles([]);
     } catch (err) {
       console.error("Failed to update sub-task:", err);
       setError("Failed to update sub task");
@@ -317,14 +326,11 @@ const AdminMainTasks = () => {
   return (
     <div>
        {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
-      <Container>
       <PageTitle mt={1}>Manage Onboarding Checklists</PageTitle>
       <Button onClick={() => setCreateTask({ name: "", description: "", deadline: "", users_id: currentUser?.id })} mt={0.5} mb={1} appearance="primary"> Create Task </Button>
       {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
       {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
-      <CardBase>
       <ListTable headers={headers} rows={taskRows}></ListTable>
-      </CardBase>
 
       {/* Create Task Modal */}
       {createTask && (
@@ -432,11 +438,10 @@ const AdminMainTasks = () => {
       {viewSubTasksModalOpen && (
         <FullScreenModal isOpen={viewSubTasksModalOpen} title={`Sub Tasks for ${selectedMainTask?.name}`} onRequestClose={() => setViewSubTasksModalOpen(false)}>
           <Button onClick={() => setCreateSubTask({ name: "", description: "", deadline: "", users_id: currentUser?.id })} ma={0.5} appearance="primary"> Create Sub Task </Button>
-          <CardBase ma={1}>
             {subTasks.length === 0 ? (
               <Paragraph>No sub-tasks available.</Paragraph>
             ) : (
-              <ListTable
+              <ListTable ma={2}
                 headers={[
                   { value: 'Name' },
                   { value: 'Description' },
@@ -470,7 +475,21 @@ const AdminMainTasks = () => {
                     {
                       value: (
                         <div className="flex space-x-2">
-                          <Button onClick={() => setEditSubTask({...subTask, existingAttachments: subTask.attachments || [], removedAttachmentIds: []})} small mr={0.5} appearance="primary"> Edit </Button>
+                          <Button
+                            onClick={() =>
+                              setEditSubTask({
+                                ...subTask,
+                                existingAttachments: subTask.attachments || [],
+                                attachments: [],
+                                removedAttachmentIds: [],
+                              })
+                            }
+                            small
+                            mr={0.5}
+                            appearance="primary"
+                          >
+                            Edit
+                          </Button>
                           <Button onClick={() => setDeleteSubTask(subTask)} small danger> Delete </Button>
                         </div>
                       ),
@@ -480,7 +499,6 @@ const AdminMainTasks = () => {
                 }))}
               />
             )}
-          </CardBase>
           <Button onClick={() => setViewSubTasksModalOpen(false)} ma={0.5}>Close</Button>
         </FullScreenModal>
       )}
@@ -524,21 +542,21 @@ const AdminMainTasks = () => {
             />
           </FormControl>
           <FormControl label="Attachments" fieldId="sub-task-attachments">
-            <FileUploader
-              fileLabel="Attachments"
-              multiple={true}
-              onFileSelect={(files: FileList | File[]) => {
-                const fileArray = Array.from(files);
-                setCreateSubTask({ ...createSubTask, attachments: fileArray });
-              }}
-              processingMessage="Uploading..."
-            />
-            {createSubTask.attachments?.map((file: File, index: number) => (
+          <FileUploader
+            fileLabel="Attachments"
+            multiple={true}
+            onFileSelect={(files: FileList | File[]) => {
+              const fileArray = Array.from(files);
+              setNewFiles(fileArray);
+            }}
+            processingMessage="Uploading..."
+          />
+            {createSubTask.attachments?.map((file, index: number) => (
               <div key={index} className="flex items-center mt-2">
-                <span>{file.name}</span>
+                <span>{file.filename}</span>
                 <Button
                   onClick={() => {
-                    const updatedAttachments = createSubTask.attachments?.filter((file: File, i: number) => i !== index);
+                    const updatedAttachments = createSubTask.attachments?.filter((_, i: number) => i !== index);
                     setCreateSubTask({ ...createSubTask, attachments: updatedAttachments });
                   }}
                   small
@@ -555,14 +573,14 @@ const AdminMainTasks = () => {
       {/* Edit Sub Task Modal */}
       {editSubTask && (
         <TaskDialog
-        id="edit-sub-task-modal"
-        isOpen={Boolean(editSubTask)}
-        title="Edit Sub Task"
-        onRequestClose={() => setEditSubTask(null)}
-        closeButtonLabel="Cancel"
-        primaryButtonLabel="Save"
-        onPrimaryAction={handleUpdateSubTask}
-        shouldCloseOnOverlayClickOrEsc={true}
+          id="edit-sub-task-modal"
+          isOpen={Boolean(editSubTask)}
+          title="Edit Sub Task"
+          onRequestClose={() => setEditSubTask(null)}
+          closeButtonLabel="Cancel"
+          primaryButtonLabel="Save"
+          onPrimaryAction={handleUpdateSubTask}
+          shouldCloseOnOverlayClickOrEsc={true}
         >
           <FormControl label="Name" fieldId="edit-sub-task-name">
             <TextField
@@ -592,7 +610,7 @@ const AdminMainTasks = () => {
           </FormControl>
           <FormControl label="Attachments" fieldId="edit-sub-task-attachments">
             {/* Display existing attachments */}
-            {(editSubTask.existingAttachments || []).map((attachment: any, index: number) => (
+            {(editSubTask.existingAttachments || []).map((attachment, index) => (
               <div key={index} className="flex items-center mt-2">
                 <a
                   href={attachment.url}
@@ -603,7 +621,7 @@ const AdminMainTasks = () => {
                 </a>
                 <Button
                   onClick={() => {
-                    const updatedAttachments = (editSubTask.existingAttachments || []).filter((a: any, i: number) => i !== index);
+                    const updatedAttachments = (editSubTask.existingAttachments || []).filter((_, i) => i !== index);
                     const removedAttachmentIds = [...(editSubTask.removedAttachmentIds || []), attachment.id];
                     setEditSubTask({
                       ...editSubTask,
@@ -625,17 +643,18 @@ const AdminMainTasks = () => {
               multiple={true}
               onFileSelect={(files: FileList | File[]) => {
                 const fileArray = Array.from(files);
-                setEditSubTask({ ...editSubTask, attachments: fileArray });
+                setNewFiles(fileArray);
               }}
+              processingMessage="Uploading..."
             />
             {/* Display newly added attachments */}
-            {(editSubTask.attachments || []).map((file: File, index: number) => (
+            {newFiles.map((file, index) => (
               <div key={index} className="flex items-center mt-2">
                 <span>{file.name}</span>
                 <Button
                   onClick={() => {
-                    const updatedAttachments = (editSubTask.attachments || []).filter((file: File, i: number) => i !== index);
-                    setEditSubTask({ ...editSubTask, attachments: updatedAttachments });
+                    const updatedFiles = newFiles.filter((_, i) => i !== index);
+                    setNewFiles(updatedFiles);
                   }}
                   small
                   danger
@@ -664,7 +683,6 @@ const AdminMainTasks = () => {
           <Paragraph>Are you sure you want to delete {deleteSubTask.name}?</Paragraph>
         </TaskDialog>
       )}
-      </Container>
     </div>
   );
 };

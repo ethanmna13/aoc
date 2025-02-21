@@ -59,6 +59,7 @@ const MentorDashboard = () => {
     const [assignedSubTasks, setAssignedSubTasks] = useState<AssignedSubTask[]>([]);
     const [assignedMainTasks, setAssignedMainTasks] = useState<AssignedMainTask[]>([]);
     const navigate = useNavigate();
+    const [isClicked, setIsClicked] = React.useState<boolean>(false);
     const token = localStorage.getItem('authToken');
 
     useEffect(() => {
@@ -213,8 +214,8 @@ const MentorDashboard = () => {
                 </GridBlock>
             </GridWrapper>
             <PageTitle mt={1} ml={1} mb={1}>Your Mentees</PageTitle>
-            <ListTable headers={menteeHeaders} rows={menteeRows}></ListTable>
-        </div>
+            <ListTable headers={menteeHeaders} rows={menteeRows} ></ListTable>
+            </div>
     );
 };
 

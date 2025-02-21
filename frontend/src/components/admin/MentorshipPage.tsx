@@ -1,4 +1,4 @@
-import { Button, CardBase, Container, FloatingMessageBlock, FormControl, FullScreenModal, ListTable, PageTitle, Paragraph, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
+import { Button, FloatingMessageBlock, FormControl, FullScreenModal, ListTable, PageTitle, Paragraph, SelectBox, TableHeader, TaskDialog } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +46,7 @@ interface SubTask {
   main_tasks_id?: number;
   users_id?: number;
   user_name?: string;
-  attachments?: File[];
+  attachments?: Attachment[];
 }
 
 interface AssignedMainTask {
@@ -66,13 +66,18 @@ interface AssignedSubTask {
   sub_task_id: number;
   sub_task_name: string;
   status: string;
-  submissions?: File[];
+  submissions?: Attachment[];
 }
 
 interface CustomJwtPayload {
   id: number;
   name: string;
   role: string;
+}
+
+interface Attachment {
+  url: string;
+  filename: string;
 }
 
 const mentorshipHeaders: TableHeader[] = [
@@ -308,6 +313,7 @@ const MentorshipPage = () => {
       const response = await axios.get(
         `http://localhost:3000/api/v1/assigned_main_tasks/${assignedMainTaskId}/assigned_sub_tasks`,
         {
+          params: { assigned_main_task_id: assignedMainTaskId },
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -434,7 +440,7 @@ const MentorshipPage = () => {
               }}
               small
             >
-              View Assigned Tasks
+              Assign Tasks
             </Button>
           </div>
         ),
@@ -485,7 +491,7 @@ const MentorshipPage = () => {
       {
         value: (
           <div>
-            {subTask.attachments?.map((attachment: any, index: number) => (
+            {subTask.attachments?.map((attachment: Attachment, index: number) => (
               <a
                 key={index}
                 href={attachment.url}
@@ -540,7 +546,7 @@ const MentorshipPage = () => {
       {
         value: (
           <div>
-            {task.submissions?.map((attachment: any, index: number) => (
+            {task.submissions?.map((attachment: Attachment, index: number) => (
               <a
                 key={index}
                 href={attachment.url}
@@ -567,7 +573,6 @@ const MentorshipPage = () => {
   return (
     <div>
       {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
-      <Container>
         <PageTitle mt={1} >Mentorships</PageTitle>
         <Button onClick={handleAssignClick} mt={0.5} mb={1} appearance="primary">Assign a Mentorship</Button>
         {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
@@ -653,12 +658,9 @@ const MentorshipPage = () => {
         >
           <p>Are you sure you want to delete this mentorship?</p>
         </TaskDialog>
-        <CardBase>
-          <ListTable headers={mentorshipHeaders} rows={mentorshipRows} />
-        </CardBase>
+          <ListTable headers={mentorshipHeaders} rows={mentorshipRows} ma={1}/>
         <PageTitle mt={1} >Assigned Tasks</PageTitle>
-        <CardBase>
-        <ListTable
+        <ListTable ma={1}
           headers={[
             { value: 'ID' },
             { value: 'Mentorship Name' },
@@ -668,8 +670,6 @@ const MentorshipPage = () => {
           ]}
           rows={assignedMainTaskRows}
         />
-      </CardBase>
-      </Container>
 
       {/* View Main Tasks Modal */}
       {viewMainTasksModalOpen && (
@@ -678,12 +678,11 @@ const MentorshipPage = () => {
         title={`${selectedMentorship?.mentor_name} & ${selectedMentorship?.mentee_name}'s Tasks`}
         onRequestClose={() => setViewMainTasksModalOpen(false)}
         >
-          <CardBase ma={1}>
             <PageTitle>Main Tasks</PageTitle>
             {mainTasks.length === 0 ? (
               <Paragraph>No main tasks available.</Paragraph>
             ) : (
-              <ListTable
+              <ListTable ma={1}
               withCheckBox
                 headers={[
                   { value: 'ID' },
@@ -696,7 +695,6 @@ const MentorshipPage = () => {
                 rows={mainTaskRows}
               />
             )}
-          </CardBase>
           <Button onClick={() => setViewMainTasksModalOpen(false)} ma={0.5}>Cancel</Button>
           <Button onClick={handleAssignTasks} appearance="primary" ma={0.5}>Assign</Button>
         </FullScreenModal>
@@ -709,11 +707,10 @@ const MentorshipPage = () => {
         title={`Sub Tasks for ${selectedMainTask?.name}`}
         onRequestClose={() => setViewSubTasksModalOpen(false)}
         >
-          <CardBase ma={1}>
             {subTasks.length === 0 ? (
               <Paragraph>No sub-tasks available.</Paragraph>
             ) : (
-              <ListTable withCheckBox={true}
+              <ListTable withCheckBox={true} ma={1}
                 headers={[
                   { value: 'Name' },
                   { value: 'Description' },
@@ -724,7 +721,6 @@ const MentorshipPage = () => {
                 rows={subTaskRows}
               />
             )}
-          </CardBase>
           <Button onClick={() => setViewSubTasksModalOpen(false)} ma={0.5}>Close</Button>
         </FullScreenModal>
       )}
@@ -735,12 +731,11 @@ const MentorshipPage = () => {
           title={`Assigned Sub Tasks for ${selectedAssignedMainTask?.main_task_name}`}
           onRequestClose={() => setViewAssignedSubTasksModalOpen(false)}
         >
-          <CardBase ma={1}>
             <PageTitle>Assigned Sub Tasks</PageTitle>
             {assignedSubTasks.length === 0 ? (
               <Paragraph>No sub-tasks assigned.</Paragraph>
             ) : (
-              <ListTable
+              <ListTable ma={1}
                 headers={[
                   { value: 'ID' },
                   { value: 'Name' },
@@ -752,7 +747,6 @@ const MentorshipPage = () => {
                 rows={assignedSubTaskRows}
               />
             )}
-          </CardBase>
           <Button onClick={() => setViewAssignedSubTasksModalOpen(false)} ma={0.5}>Close</Button>
         </FullScreenModal>
       )}

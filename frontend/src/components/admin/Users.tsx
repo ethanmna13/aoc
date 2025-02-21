@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Button, TextField, Paragraph, Container, CardBase, FormControl, SelectBox, TaskDialog, FloatingMessageBlock } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, TextField, Paragraph, FormControl, SelectBox, TaskDialog, FloatingMessageBlock, Pager } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -171,15 +171,11 @@ const AdminUsersPage = () => {
   return (
     <div>
       {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
-      <Container>
         <PageTitle mt={1}>Manage Users</PageTitle>
         <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
         {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
         {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
-        <CardBase>
           <ListTable headers={headers} rows={userRows}></ListTable>
-        </CardBase>
-
         <TaskDialog 
           id="register-user-dialog" 
           isOpen={isOpen} 
@@ -287,7 +283,7 @@ const AdminUsersPage = () => {
             <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
           </TaskDialog>
         )}
-      </Container>
+        <Pager currentPage={1} pageRange={1} pageCount={1} onPageChange={navigate}></Pager>
     </div>
   );
 };

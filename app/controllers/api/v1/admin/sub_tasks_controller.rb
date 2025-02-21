@@ -12,8 +12,8 @@ class Api::V1::Admin::SubTasksController < ApplicationController
   end
 
   def index
-    @sub_tasks = @main_task.sub_tasks.includes(:user)
-    sub_tasks_with_user_names = @sub_tasks.map do |sub_task|
+    @sub_tasks = @main_task.sub_tasks.includes(:user, :attachments_attachments)
+    sub_tasks_with_attachments = @sub_tasks.map do |sub_task|
       {
         id: sub_task.id,
         name: sub_task.name,
@@ -23,22 +23,22 @@ class Api::V1::Admin::SubTasksController < ApplicationController
         user_name: sub_task.user&.name,
         attachments: sub_task.attachments.map do |attachment|
           {
-            url: url_for(attachment),
+            id: attachment.id,
+            url: rails_blob_url(attachment),
             filename: attachment.filename.to_s
           }
         end
       }
     end
-    render json: sub_tasks_with_user_names
+    render json: sub_tasks_with_attachments
   end
 
   def create
-    Rails.logger.info "Received sub_task params: #{sub_task_params.inspect}"
     @sub_task = @main_task.sub_tasks.new(sub_task_params)
     @sub_task.users_id = current_user.id
 
     if @sub_task.save
-      render json: {
+      sub_task_with_attachments = {
         id: @sub_task.id,
         name: @sub_task.name,
         description: @sub_task.description,
@@ -47,20 +47,20 @@ class Api::V1::Admin::SubTasksController < ApplicationController
         user_name: @sub_task.user&.name,
         attachments: @sub_task.attachments.map do |attachment|
           {
-            url: url_for(attachment),
+            id: attachment.id,
+            url: rails_blob_url(attachment),
             filename: attachment.filename.to_s
           }
         end
-      }, status: :created
+      }
+      render json: sub_task_with_attachments, status: :created
     else
-      Rails.logger.error "Failed to save sub_task: #{@sub_task.errors.full_messages}"
       render json: @sub_task.errors, status: :unprocessable_entity
     end
   end
 
   def update
-    Rails.logger.info "Received sub_task params: #{sub_task_params.inspect}"
-    Rails.logger.info "Received attachments to remove: #{params[:sub_task][:remove_attachment_ids]}" if params[:sub_task][:remove_attachment_ids]
+    @sub_task = @main_task.sub_tasks.find(params[:id])
 
     if params[:sub_task][:remove_attachment_ids]
       params[:sub_task][:remove_attachment_ids].each do |attachment_id|
@@ -68,9 +68,8 @@ class Api::V1::Admin::SubTasksController < ApplicationController
         attachment.purge if attachment
       end
     end
-
     if @sub_task.update(sub_task_params)
-      render json: {
+      sub_task_with_attachments = {
         id: @sub_task.id,
         name: @sub_task.name,
         description: @sub_task.description,
@@ -79,13 +78,14 @@ class Api::V1::Admin::SubTasksController < ApplicationController
         user_name: @sub_task.user&.name,
         attachments: @sub_task.attachments.map do |attachment|
           {
-            url: url_for(attachment),
+            id: attachment.id,
+            url: rails_blob_url(attachment),
             filename: attachment.filename.to_s
           }
         end
       }
+      render json: sub_task_with_attachments
     else
-      Rails.logger.error "Failed to update sub_task: #{@sub_task.errors.full_messages}"
       render json: @sub_task.errors, status: :unprocessable_entity
     end
   end
