@@ -31,7 +31,7 @@ class Api::V1::AssignedSubTasksController < ApplicationController
     sub_task_ids = params[:sub_task_ids]
     assigned_main_task_id = params[:assigned_main_task_id]
 
-    existing_assignments = AssignedSubTask.where(mentorships_id: @mentorship.id, sub_tasks_id: sub_task_ids)
+    existing_assignments = AssignedSubTask.where(mentorships_id: @mentorship.id, sub_task_id: sub_task_ids)
     if existing_assignments.any?
       render json: { error: "One or more sub-tasks are already assigned to this mentorship" }, status: :unprocessable_entity
       return
@@ -41,7 +41,7 @@ class Api::V1::AssignedSubTasksController < ApplicationController
     sub_task_ids.each do |sub_task_id|
       assigned_sub_task = AssignedSubTask.create!(
         mentorships_id: @mentorship.id,
-        sub_tasks_id: sub_task_id,
+        sub_task_id: sub_task_id,
         assigned_main_tasks_id: assigned_main_task_id,
         status: :in_progress
       )

@@ -1,4 +1,4 @@
-import { Button, CardBase, FormControl, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
+import { Button, CardBase, FloatingMessageBlock, FormControl, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +46,7 @@ const LoginPage = () => {
           if (userRole === "admin") {
             navigate('/admin/users');
           } else if (userRole === "mentor") {
-            navigate('/mentor/main-tasks');
+            navigate('/mentor/dashboard');
           } else if (userRole === "mentee") {
             navigate('/mentee/TODO');
           } else {
@@ -58,13 +58,14 @@ const LoginPage = () => {
           navigate('/unauthorized');
         }
       }
-    } catch (error: any) {
-      setError(error.response?.data?.error || error.message);
+    } catch {
+      setError("There was an error logging you in. Please try again.");
     }
   };
 
   return (
     <div className="container">
+       {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
       <CardBase paddingSize="large">
         <img 
           src={likhalogo}

@@ -8,6 +8,8 @@ class Api::V1::MentorshipsController < ApplicationController
     render json: mentorships.map { |mentorship|
       {
         id: mentorship.id,
+        mentor_id: mentorship.mentor.id,
+        mentee_id: mentorship.mentee.id,
         mentor_name: mentorship.mentor.name,
         mentor_email: mentorship.mentor.email,
         mentee_name: mentorship.mentee.name,

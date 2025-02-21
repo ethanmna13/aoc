@@ -538,7 +538,7 @@ const AdminMainTasks = () => {
                 <span>{file.name}</span>
                 <Button
                   onClick={() => {
-                    const updatedAttachments = createSubTask.attachments.filter((file: File, i: number) => i !== index);
+                    const updatedAttachments = createSubTask.attachments?.filter((file: File, i: number) => i !== index);
                     setCreateSubTask({ ...createSubTask, attachments: updatedAttachments });
                   }}
                   small

@@ -35,16 +35,10 @@ function NavTabs({ role }: NavTabsProps) {
 
   const mentorNavLinks = [
     {
-        title: "Onboarding Checklists",
-        url: "/mentor/main-tasks",
+        title: "Dashboard",
+        url: "/mentor/dashboard",
         IconComponent: MdOutlinePeopleOutline,
-        current: location.pathname == "/mentor/main-tasks" ? true : false,
-    },
-    {
-        title: "My Mentees",
-        url: "/mentor/view-mentees",
-        IconComponent: MdOutlinePeopleOutline,
-        current: location.pathname == "/mentor/view-mentees" ? true : false,
+        current: location.pathname == "/mentor/dashboard" ? true : false,
     },
     {
       title: "To Do Page",

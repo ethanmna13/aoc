@@ -24,7 +24,7 @@ interface Users {
 }
 
 interface CustomJwtPayload {
-  id: number;
+  sub: number;
   name: string;
   role: string;
 }
@@ -63,6 +63,7 @@ const AdminUsersPage = () => {
           setError("Unauthorized");
           navigate('/unauthorized');
         } else {
+          console.log(decodedToken.sub)
           fetchUsers();
         }
       } catch {
