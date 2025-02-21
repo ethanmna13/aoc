@@ -4,8 +4,12 @@ class Api::V1::AssignedSubTasksController < ApplicationController
   before_action :set_mentorship, only: [ :create ]
 
   def index
-    assigned_sub_tasks = AssignedSubTask.includes(mentorship: [ :mentor, :mentee ], assigned_main_task: :main_task, sub_task: :user).all
-
+    assigned_sub_tasks = if params[:assigned_main_task_id]
+      AssignedSubTask.includes(mentorship: [ :mentor, :mentee ], assigned_main_task: :main_task, sub_task: :user)
+                    .where(assigned_main_tasks_id: params[:assigned_main_task_id])
+    else
+      AssignedSubTask.includes(mentorship: [ :mentor, :mentee ], assigned_main_task: :main_task, sub_task: :user).all
+    end
     assigned_sub_tasks_with_names = assigned_sub_tasks.map do |task|
       {
         id: task.id,
@@ -23,7 +27,6 @@ class Api::V1::AssignedSubTasksController < ApplicationController
         end
       }
     end
-
     render json: assigned_sub_tasks_with_names, status: :ok
   end
 

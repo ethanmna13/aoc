@@ -47,7 +47,7 @@ class Api::V1::AssignedMainTasksController < ApplicationController
   def destroy
     assigned_main_task = AssignedMainTask.find(params[:id])
     assigned_main_task.destroy
-    render json: { message: "Assigned main task deleted successfully" }, status: :ok
+    render json: { message: "Assigned main task and its sub tasks deleted successfully" }, status: :ok
   rescue ActiveRecord::RecordNotFound => e
     render json: { error: "Assigned main task not found" }, status: :not_found
   end
