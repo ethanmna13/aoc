@@ -93,6 +93,7 @@ const MentorshipPage = () => {
   const [mentees, setMentees] = useState<Mentees[]>([]);
   const [mentorships, setMentorships] = useState<Mentorship[]>([]);
   const [selectedMentorship, setSelectedMentorship] = useState<Mentorship | null>(null);
+  const [selectedAssignedMainTask, setSelectedAssignedMainTask] = useState<AssignedMainTask | null>(null);
   const [isAssignOpen, setAssignOpen] = React.useState<boolean>(false);
   const [isEditOpen, setEditOpen] = React.useState<boolean>(false);
   const [isDeleteOpen, setDeleteOpen] = React.useState<boolean>(false);
@@ -304,10 +305,13 @@ const MentorshipPage = () => {
   
   const fetchAssignedSubTasks = async (assignedMainTaskId: number) => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/v1/assigned_sub_tasks?assigned_main_task_id=${assignedMainTaskId}`, {
-        withCredentials: true,
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `http://localhost:3000/api/v1/assigned_main_tasks/${assignedMainTaskId}/assigned_sub_tasks`,
+        {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setAssignedSubTasks(response.data);
     } catch {
       setError("Failed to fetch assigned sub tasks");
@@ -324,6 +328,7 @@ const MentorshipPage = () => {
       fetchAssignedMainTasks();
       setSuccessMessage(`${unassignMainTask.main_task_name} successfully unassigned from ${unassignMainTask.mentorship_name}.`);
       setTimeout(() => setSuccessMessage(""), 3000);
+      setUnassignMainTask(null);
     } catch {
       setError("Failed to unassign main task");
     }
@@ -332,13 +337,14 @@ const MentorshipPage = () => {
   const handleUnassignSubTask = async () => {
     if (!unassignSubTask) return;
     try {
-      await axios.delete(`http://localhost:3000/api/v1/assigned_sub_tasks/${unassignSubTask.id}`, {
+      await axios.delete(`http://localhost:3000/api/v1/assigned_main_tasks/${selectedAssignedMainTaskId}/assigned_sub_tasks/${unassignSubTask.id}`, {
         withCredentials: true,
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchAssignedSubTasks(selectedAssignedMainTaskId!);
       setSuccessMessage(`${unassignSubTask.sub_task_name} successfully unassigned from ${unassignSubTask.mentorship_name}.`);
       setTimeout(() => setSuccessMessage(""), 3000);
+      setUnassignSubTask(null);
     } catch {
       setError("Failed to unassign sub task");
     }
@@ -388,7 +394,7 @@ const MentorshipPage = () => {
       const assignedMainTasks = assignedMainTasksResponse.data.assigned_main_tasks;
 
       for (const assignedMainTask of assignedMainTasks) {
-      await axios.post("http://localhost:3000/api/v1/assigned_sub_tasks", {
+      await axios.post(`http://localhost:3000/api/v1/assigned_main_tasks/${assignedMainTask.id}/assigned_sub_tasks`, {
         mentorships_id: selectedMentorshipId,
         sub_task_ids: selectedSubTaskIds,
         assigned_main_task_id: assignedMainTask.id
@@ -507,9 +513,12 @@ const MentorshipPage = () => {
             <Button onClick={() => setUnassignMainTask(task)} small danger mr={0.5}>Unassign</Button>
             <Button
               onClick={() => {
-                setSelectedAssignedMainTaskId(task.id);
-                fetchAssignedSubTasks(task.id);
-                setViewAssignedSubTasksModalOpen(true);
+                if (task.id) {
+                  setSelectedAssignedMainTask(task);
+                  setSelectedAssignedMainTaskId(task.id);
+                  fetchAssignedSubTasks(task.id);
+                  setViewAssignedSubTasksModalOpen(true);
+                }
               }}
               small
             >
@@ -723,7 +732,7 @@ const MentorshipPage = () => {
       {viewAssignedSubTasksModalOpen && (
         <FullScreenModal
           isOpen={viewAssignedSubTasksModalOpen}
-          title={`Assigned Sub Tasks`}
+          title={`Assigned Sub Tasks for ${selectedAssignedMainTask?.main_task_name}`}
           onRequestClose={() => setViewAssignedSubTasksModalOpen(false)}
         >
           <CardBase ma={1}>

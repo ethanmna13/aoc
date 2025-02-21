@@ -4,8 +4,7 @@ import LoginPage from "./components/LoginPage";
 import AdminUsers from "./components/admin/Users";
 import AdminOnboardingChecklists from "./components/admin/OnboardingChecklists";
 import AdminMentorshipPage from "./components/admin/MentorshipPage";
-import MentorOnboardingChecklist from "./components/mentor/MentorOnboardingChecklist";
-import MentorViewMenteePage from "./components/mentor/ViewMenteePage";
+import MentorDashboard from "./components/mentor/Dashboard";
 import MentorToDoPage from "./components/mentor/MentorToDoPage";
 import MenteeToDoPage from "./components/mentee/MenteeToDoPage";
 import UnauthorizedPage from "./components/UnauthorizedPage";
@@ -20,8 +19,7 @@ function App() {
         <Route path="admin/users" element={<AdminUsers />} />
         <Route path="admin/main-tasks" element={<AdminOnboardingChecklists />} />
         <Route path="admin/mentorships" element={<AdminMentorshipPage />} />
-        <Route path="mentor/main-tasks" element={<MentorOnboardingChecklist />} />
-        <Route path="mentor/view-mentees" element={<MentorViewMenteePage />} />
+        <Route path="mentor/dashboard" element={<MentorDashboard />} />
         <Route path="mentor/TODO" element={<MentorToDoPage />} />
         <Route path="mentee/TODO" element={<MenteeToDoPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
