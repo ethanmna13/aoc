@@ -1,12 +1,10 @@
-import { CardBase, FloatingMessageBlock, GridBlock, GridWrapper, ListTable, PageTitle, Paragraph, SectionTitle, SubSectionTitle, TableHeader } from "@freee_jp/vibes";
+import { CardBase, FloatingMessageBlock, FullScreenModal, GridBlock, GridWrapper, ListTable, PageTitle, Paragraph, SectionTitle, SubSectionTitle, TableHeader } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import React from "react";
 import axios from "axios";
 import "../css/Mentor.css";
-
 
 interface CustomJwtPayload {
     sub: number;
@@ -30,6 +28,9 @@ interface AssignedMainTask {
     mentorship_name: string;
     main_task_id: number;
     main_task_name: string;
+    main_task_description: string,
+    main_task_deadline: string,
+    main_task_created_by: string,
     status: string;
 }
 
@@ -40,8 +41,11 @@ interface AssignedSubTask {
     assigned_main_tasks_id: number;
     sub_task_id: number;
     sub_task_name: string;
+    sub_task_description: string;
+    sub_task_deadline: string;
+    sub_task_attachments: { url: string; filename: string }[];
     status: string;
-    submissions?: File[];
+    submissions?: { url: string; filename: string }[];
 }
 
 const menteeHeaders: TableHeader[] = [
@@ -49,7 +53,7 @@ const menteeHeaders: TableHeader[] = [
     { value: 'Email' },
     { value: '# of Tasks' },
     { value: 'Status' }
-]
+];
 
 const MentorDashboard = () => {
     const [currentUser, setCurrentUser] = useState<CustomJwtPayload | null>(null);
@@ -58,8 +62,12 @@ const MentorDashboard = () => {
     const [mentorships, setMentorships] = useState<Mentorship[]>([]);
     const [assignedSubTasks, setAssignedSubTasks] = useState<AssignedSubTask[]>([]);
     const [assignedMainTasks, setAssignedMainTasks] = useState<AssignedMainTask[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedMentorship, setSelectedMentorship] = useState<Mentorship | null>(null);
+    const [modalAssignedMainTasks, setModalAssignedMainTasks] = useState<AssignedMainTask[]>([]);
+    const [isSubTaskModalOpen, setIsSubTaskModalOpen] = useState(false);
+    const [selectedMainTask, setSelectedMainTask] = useState<AssignedMainTask | null>(null);
     const navigate = useNavigate();
-    const [isClicked, setIsClicked] = React.useState<boolean>(false);
     const token = localStorage.getItem('authToken');
 
     useEffect(() => {
@@ -90,8 +98,6 @@ const MentorDashboard = () => {
         fetchCurrentUser();
     }, [navigate]);
 
-
-
     const fetchMentorships = async () => {
         try {
             const response = await axios.get("http://localhost:3000/api/v1/mentorships", {
@@ -107,7 +113,7 @@ const MentorDashboard = () => {
 
     const fetchAssignedSubTasks = async (assignedMainTaskId: number) => {
         try {
-            const response = await axios.get(`http://localhost:3000/api/v1/assigned_sub_tasks?assigned_main_task_id=${assignedMainTaskId}`, {
+            const response = await axios.get(`http://localhost:3000/api/v1/assigned_main_tasks/${assignedMainTaskId}/assigned_sub_tasks`, {
                 withCredentials: true,
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -126,6 +132,18 @@ const MentorDashboard = () => {
             setAssignedMainTasks(response.data);
         } catch {
             setError("Failed to fetch assigned main tasks");
+        }
+    };
+
+    const fetchAssignedMainTasksForMentorship = async (mentorshipId: number) => {
+        try {
+            const response = await axios.get(`http://localhost:3000/api/v1/assigned_main_tasks?mentorships_id=${mentorshipId}`, {
+                withCredentials: true,
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setModalAssignedMainTasks(response.data);
+        } catch {
+            setError("Failed to fetch assigned main tasks for the selected mentorship");
         }
     };
 
@@ -166,25 +184,36 @@ const MentorDashboard = () => {
     };
 
     const menteeRows = mentorships
-    .filter(mentorship => mentorship.mentor_id === currentUser?.sub) 
-    .map(mentorship => {
-        const mentorshipStatus = calculateMentorshipStatus(mentorship);
-        const menteeMainTasks = assignedMainTasks.filter(task => task.mentorships_id === mentorship.id);
-        const menteeSubTasks = assignedSubTasks.filter(task => task.mentorships_id === mentorship.id);
-        const totalTasks = menteeMainTasks.length + menteeSubTasks.length;
+        .filter(mentorship => mentorship.mentor_id === currentUser?.sub)
+        .map(mentorship => {
+            const mentorshipStatus = calculateMentorshipStatus(mentorship);
+            const menteeMainTasks = assignedMainTasks.filter(task => task.mentorships_id === mentorship.id);
+            const menteeSubTasks = assignedSubTasks.filter(task => task.mentorships_id === mentorship.id);
+            const totalTasks = menteeMainTasks.length + menteeSubTasks.length;
 
-        return {
-            cells: [
-                { value: mentorship.mentee_name },
-                { value: mentorship.mentee_email },
-                { value: totalTasks },
-                { value: mentorshipStatus }, 
-            ],
-        };
-    });
+            return {
+                cells: [
+                    { value: mentorship.mentee_name },
+                    { value: mentorship.mentee_email },
+                    { value: totalTasks },
+                    { value: mentorshipStatus },
+                ],
+                onClick: () => {
+                    setSelectedMentorship(mentorship);
+                    fetchAssignedMainTasksForMentorship(mentorship.id);
+                    setIsModalOpen(true);
+                }
+            };
+        });
 
     const { pendingMentorships, inProgressMentorships, completedMentorships, totalMentorships } = calculateMentorshipCounts();
 
+    const handleMainTaskClick = async (mainTask: AssignedMainTask) => {
+        setSelectedMainTask(mainTask);
+        setAssignedSubTasks([]); 
+        await fetchAssignedSubTasks(mainTask.id); 
+        setIsSubTaskModalOpen(true);
+    };
 
     return (
         <div>
@@ -214,8 +243,80 @@ const MentorDashboard = () => {
                 </GridBlock>
             </GridWrapper>
             <PageTitle mt={1} ml={1} mb={1}>Your Mentees</PageTitle>
-            <ListTable headers={menteeHeaders} rows={menteeRows} ></ListTable>
-            </div>
+            <ListTable headers={menteeHeaders} rows={menteeRows} />
+            <FullScreenModal
+                id="assigned-tasks-modal"
+                isOpen={isModalOpen}
+                title="Assigned Main Tasks"
+                contentLabel="Assigned Main Tasks Modal"
+                onRequestClose={() => setIsModalOpen(false)}
+                disabled={false}
+                shouldCloseOnEsc={true}
+            >
+                <ListTable ma={1}
+                    headers={[
+                        { value: 'Name' },
+                        { value: 'Description' },
+                        { value: 'Deadline' },
+                        { value: 'Created By' },
+                        { value: 'Status' }
+                    ]}
+                    rows={modalAssignedMainTasks.map(task => ({
+                        cells: [
+                            { value: task.main_task_name },
+                            { value: task.main_task_description || 'N/A' },
+                            { value: task.main_task_deadline || 'N/A' },
+                            { value: task.main_task_created_by || 'N/A' },
+                            { value: task.status }
+                        ],
+                        onClick: () => handleMainTaskClick(task)
+                    }))}
+                />
+            </FullScreenModal>
+            <FullScreenModal
+                id="assigned-sub-tasks-modal"
+                isOpen={isSubTaskModalOpen}
+                title={`Sub Tasks for ${selectedMainTask?.main_task_name}`}
+                contentLabel="Assigned Sub Tasks Modal"
+                onRequestClose={() => setIsSubTaskModalOpen(false)}
+                disabled={false}
+                shouldCloseOnEsc={true}
+            >
+                <ListTable ma={1}
+                    headers={[
+                        { value: 'Name' },
+                        { value: 'Description' },
+                        { value: 'Deadline' },
+                        { value: 'Attachments' },
+                        { value: 'Status' }
+                    ]}
+                    rows={assignedSubTasks.map(task => ({
+                        cells: [
+                            { value: task.sub_task_name },
+                            { value: task.sub_task_description || 'N/A' },
+                            { value: task.sub_task_deadline || 'N/A' },
+                            {
+                                value: (
+                                    <div>
+                                        {task.sub_task_attachments?.map((attachment, index) => (
+                                            <a
+                                                key={index}
+                                                href={attachment.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                {attachment.filename}
+                                            </a>
+                                        ))}
+                                    </div>
+                                )
+                            },
+                            { value: task.status }
+                        ]
+                    }))}
+                />
+            </FullScreenModal>
+        </div>
     );
 };
 

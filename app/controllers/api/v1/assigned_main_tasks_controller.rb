@@ -4,22 +4,29 @@ class Api::V1::AssignedMainTasksController < ApplicationController
   before_action :set_mentorship, only: [ :create ]
 
   def index
-    assigned_main_tasks = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user).all
+    if params[:mentorships_id].present?
+      assigned_main_tasks = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user)
+                                            .where(mentorships_id: params[:mentorships_id])
+    else
+      assigned_main_tasks = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user).all
+    end
 
-    assigned_main_tasks_with_names = assigned_main_tasks.map do |task|
+    assigned_main_tasks_with_details = assigned_main_tasks.map do |task|
       {
         id: task.id,
         mentorships_id: task.mentorships_id,
         mentorship_name: "#{task.mentorship.mentor.name} & #{task.mentorship.mentee.name}",
         main_task_id: task.main_tasks_id,
         main_task_name: task.main_task.name,
+        main_task_description: task.main_task.description,
+        main_task_deadline: task.main_task.deadline,
+        main_task_created_by: task.main_task.user.name,
         status: task.status
       }
     end
 
-    render json: assigned_main_tasks_with_names, status: :ok
+    render json: assigned_main_tasks_with_details, status: :ok
   end
-
   def create
     main_tasks_ids = params[:main_tasks_ids]
 
