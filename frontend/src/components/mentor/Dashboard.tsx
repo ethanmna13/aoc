@@ -1,4 +1,4 @@
-import { CardBase, FloatingMessageBlock, FullScreenModal, GridBlock, GridWrapper, ListTable, PageTitle, Paragraph, SectionTitle, SubSectionTitle, TableHeader } from "@freee_jp/vibes";
+import { Button, CardBase, FileUploader, FloatingMessageBlock, FormControl, FullScreenModal, GridBlock, GridWrapper, ListTable, PageTitle, Paragraph, SectionTitle, SubSectionTitle, TableHeader, TaskDialog } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -45,7 +45,7 @@ interface AssignedSubTask {
     sub_task_deadline: string;
     sub_task_attachments: { url: string; filename: string }[];
     status: string;
-    submissions?: { url: string; filename: string }[];
+    submissions?: {id: number; url: string; filename: string }[];
 }
 
 const menteeHeaders: TableHeader[] = [
@@ -67,6 +67,9 @@ const MentorDashboard = () => {
     const [modalAssignedMainTasks, setModalAssignedMainTasks] = useState<AssignedMainTask[]>([]);
     const [isSubTaskModalOpen, setIsSubTaskModalOpen] = useState(false);
     const [selectedMainTask, setSelectedMainTask] = useState<AssignedMainTask | null>(null);
+    const [isSubmissionDialogOpen, setIsSubmissionDialogOpen] = useState(false);
+    const [selectedSubTask, setSelectedSubTask] = useState<AssignedSubTask | null>(null);
+    const [newSubmissionFiles, setNewSubmissionFiles] = useState<File[]>([]);
     const navigate = useNavigate();
     const token = localStorage.getItem('authToken');
 
@@ -209,11 +212,83 @@ const MentorDashboard = () => {
     const { pendingMentorships, inProgressMentorships, completedMentorships, totalMentorships } = calculateMentorshipCounts();
 
     const handleMainTaskClick = async (mainTask: AssignedMainTask) => {
+        console.log("Selected main task:", mainTask);
         setSelectedMainTask(mainTask);
         setAssignedSubTasks([]); 
         await fetchAssignedSubTasks(mainTask.id); 
         setIsSubTaskModalOpen(true);
     };
+
+    const handleFileUpload = (files: FileList | File[]) => {
+        const fileArray = Array.from(files);
+        setNewSubmissionFiles(fileArray);
+    };
+
+    const handleRemoveSubmission = async (submissionId: number, filename: string, task: AssignedSubTask) => {
+        setSelectedSubTask(task);
+        if (!selectedMainTask || !task) {
+            return;
+        }
+    
+        try {
+            const payload = {
+                assigned_sub_task: {
+                    remove_submission_ids: [submissionId],
+                },
+            };
+    
+            await axios.put(
+                `http://localhost:3000/api/v1/assigned_main_tasks/${selectedMainTask.id}/assigned_sub_tasks/${task.id}`,
+                payload,
+                {
+                    withCredentials: true,
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+    
+            setSuccessMessage(`Submission "${filename}" removed successfully`);
+            setTimeout(() => setSuccessMessage(""), 3000);
+            fetchAssignedSubTasks(selectedMainTask.id);
+        } catch (err) {
+            console.error("Failed to remove submission:", err);
+            setError("Failed to remove submission");
+        }
+    };
+
+    const handleSubmitSubmissions = async () => {
+        if (!selectedMainTask || !selectedSubTask) return;
+
+        const formData = new FormData();
+        newSubmissionFiles.forEach((file) => {
+            formData.append('assigned_sub_task[submissions][]', file);
+        });
+
+        try {
+            await axios.put(
+                `http://localhost:3000/api/v1/assigned_main_tasks/${selectedMainTask.id}/assigned_sub_tasks/${selectedSubTask.id}`,
+                formData,
+                {
+                    withCredentials: true,
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            );
+            setSuccessMessage("Submissions updated successfully");
+            setTimeout(() => setSuccessMessage(""), 3000);
+            fetchAssignedSubTasks(selectedMainTask.id);
+            setNewSubmissionFiles([]);
+            setIsSubmissionDialogOpen(false);
+        } catch (err) {
+            console.error("Failed to update submissions:", err);
+            setError("Failed to update submissions");
+        }
+    };
+
 
     return (
         <div>
@@ -288,7 +363,9 @@ const MentorDashboard = () => {
                         { value: 'Description' },
                         { value: 'Deadline' },
                         { value: 'Attachments' },
-                        { value: 'Status' }
+                        { value: 'Submissions' },
+                        { value: 'Status' },
+                        { value: 'Actions' }
                     ]}
                     rows={assignedSubTasks.map(task => ({
                         cells: [
@@ -311,11 +388,86 @@ const MentorDashboard = () => {
                                     </div>
                                 )
                             },
-                            { value: task.status }
+                            {
+                                value: (
+                                    <div>
+                                        {task.submissions?.map((submission, index) => (
+                                            <div key={index} className="flex items-center mt-2">
+                                                <a
+                                                    href={submission.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    {submission.filename}
+                                                    </a>
+                                                <Button
+                                                    onClick={() => {handleRemoveSubmission(submission.id, submission.filename, task)}
+                                                    }
+                                                    small
+                                                    danger
+                                                    ml={2}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )
+                            },
+                            { value: task.status },
+                            {
+                                value: (
+                                    <Button
+                                        onClick={() => {
+                                            setSelectedSubTask(task);
+                                            setIsSubmissionDialogOpen(true);
+                                        }}
+                                        small
+                                        appearance="primary"
+                                    >
+                                        Upload Submissions
+                                    </Button>
+                                )
+                            }
                         ]
                     }))}
                 />
-            </FullScreenModal>
+                </FullScreenModal>
+                <TaskDialog
+                id="submission-dialog"
+                isOpen={isSubmissionDialogOpen}
+                title="Upload Submissions"
+                onRequestClose={() => setIsSubmissionDialogOpen(false)}
+                closeButtonLabel="Cancel"
+                primaryButtonLabel="Submit"
+                onPrimaryAction={handleSubmitSubmissions}
+                shouldCloseOnOverlayClickOrEsc={true}
+            >
+                <FormControl label="Submissions" fieldId="sub-task-submissions">
+                    <FileUploader
+                        fileLabel="Submissions"
+                        multiple={true}
+                        onFileSelect={handleFileUpload}
+                        processingMessage="Uploading..."
+                    />
+                    {newSubmissionFiles.map((file, index) => (
+                        <div key={index} className="flex items-center mt-2">
+                            <span>{file.name}</span>
+                            <Button
+                                onClick={() => {
+                                    const updatedFiles = newSubmissionFiles.filter((_, i) => i !== index);
+                                    setNewSubmissionFiles(updatedFiles);
+                                }}
+                                small
+                                danger
+                                ml={2}
+                            >
+                                Remove
+                            </Button>
+                        </div>
+                    ))}
+                </FormControl>
+            </TaskDialog>
         </div>
     );
 };
