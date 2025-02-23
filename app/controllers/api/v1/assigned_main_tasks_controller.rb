@@ -51,6 +51,27 @@ class Api::V1::AssignedMainTasksController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  def update
+    assigned_main_task = AssignedMainTask.find(params[:id])
+
+    if params[:status].present?
+        assigned_main_task.update(status: params[:status])
+    end
+
+    render json: {
+        id: assigned_main_task.id,
+        mentorships_id: assigned_main_task.mentorships_id,
+        mentorship_name: "#{assigned_main_task.mentorship.mentor.name} & #{assigned_main_task.mentorship.mentee.name}",
+        main_task_id: assigned_main_task.main_tasks_id,
+        main_task_name: assigned_main_task.main_task.name,
+        status: assigned_main_task.status
+    }, status: :ok
+  rescue ActiveRecord::RecordNotFound
+      render json: { error: "Assigned main task not found" }, status: :not_found
+  rescue => e
+      render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   def destroy
     assigned_main_task = AssignedMainTask.find(params[:id])
     assigned_main_task.destroy

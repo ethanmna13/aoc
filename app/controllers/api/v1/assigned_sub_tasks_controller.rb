@@ -27,6 +27,7 @@ class Api::V1::AssignedSubTasksController < ApplicationController
         status: task.status,
         submissions: task.submissions.map do |submission|
           {
+            id: submission.id,
             url: url_for(submission),
             filename: submission.filename.to_s
           }
@@ -60,6 +61,26 @@ class Api::V1::AssignedSubTasksController < ApplicationController
     render json: { message: "Sub tasks assigned successfully", assigned_sub_tasks: assigned_sub_tasks }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity
+  end
+  def update
+    assigned_sub_task = AssignedSubTask.find(params[:id])
+
+    if params[:assigned_sub_task][:submissions]
+      params[:assigned_sub_task][:submissions].each do |submission|
+        assigned_sub_task.submissions.attach(submission)
+      end
+    end
+
+    if params[:assigned_sub_task][:remove_submission_ids]
+      params[:assigned_sub_task][:remove_submission_ids].each do |id|
+        submission = assigned_sub_task.submissions.find_by(id: id)
+        submission.purge if submission
+      end
+    end
+
+    render json: { message: "Submissions updated successfully", assigned_sub_task: assigned_sub_task }, status: :ok
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Assigned sub-task not found" }, status: :not_found
   end
 
   def destroy
