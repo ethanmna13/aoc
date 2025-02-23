@@ -65,6 +65,10 @@ class Api::V1::AssignedSubTasksController < ApplicationController
   def update
     assigned_sub_task = AssignedSubTask.find(params[:id])
 
+    if params[:assigned_sub_task][:status]
+      assigned_sub_task.update!(status: params[:assigned_sub_task][:status])
+    end
+
     if params[:assigned_sub_task][:submissions]
       params[:assigned_sub_task][:submissions].each do |submission|
         assigned_sub_task.submissions.attach(submission)

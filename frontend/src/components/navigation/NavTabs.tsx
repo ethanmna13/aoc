@@ -35,22 +35,16 @@ function NavTabs({ role }: NavTabsProps) {
 
   const mentorNavLinks = [
     {
-        title: "Dashboard",
+        title: "Mentorships",
         url: "/mentor/dashboard",
         IconComponent: MdOutlinePeopleOutline,
         current: location.pathname == "/mentor/dashboard" ? true : false,
-    },
-    {
-      title: "To Do Page",
-      url: "/mentor/TODO",
-      IconComponent: MdOutlinePeopleOutline,
-      current: location.pathname == "/mentor/TODO" ? true : false,
-  }
+    }
   ];
 
   const menteeNavLinks = [
     {
-        title: "To DO",
+        title: "To Do",
         url: "/mentee/TODO",
         IconComponent: MdOutlinePeopleOutline,
         current: location.pathname == "/mentee/TODO" ? true : false,
