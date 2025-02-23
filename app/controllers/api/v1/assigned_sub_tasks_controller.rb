@@ -4,13 +4,11 @@ class Api::V1::AssignedSubTasksController < ApplicationController
   before_action :set_mentorship, only: [ :create ]
 
   def index
-    assigned_sub_tasks = if params[:assigned_main_task_id]
-      AssignedSubTask.includes(mentorship: [ :mentor, :mentee ], assigned_main_task: :main_task, sub_task: :user)
-                    .where(assigned_main_tasks_id: params[:assigned_main_task_id])
-    else
-      AssignedSubTask.includes(mentorship: [ :mentor, :mentee ], assigned_main_task: :main_task, sub_task: :user).all
-    end
-    assigned_sub_tasks_with_names = assigned_sub_tasks.map do |task|
+    assigned_main_task_id = params[:assigned_main_task_id]
+    assigned_sub_tasks = AssignedSubTask.includes(:sub_task)
+                                        .where(assigned_main_tasks_id: assigned_main_task_id)
+
+    assigned_sub_tasks_with_details = assigned_sub_tasks.map do |task|
       {
         id: task.id,
         mentorships_id: task.mentorships_id,
@@ -18,18 +16,26 @@ class Api::V1::AssignedSubTasksController < ApplicationController
         assigned_main_tasks_id: task.assigned_main_tasks_id,
         sub_task_id: task.sub_task_id,
         sub_task_name: task.sub_task.name,
-        status: task.status,
-        submissions: task.submissions.map do |submissions|
+        sub_task_description: task.sub_task.description,
+        sub_task_deadline: task.sub_task.deadline,
+        sub_task_attachments: task.sub_task.attachments.map do |attachment|
           {
-            url: url_for(submissions),
-            filename: submissions.filename.to_s
+            url: url_for(attachment),
+            filename: attachment.filename.to_s
+          }
+        end,
+        status: task.status,
+        submissions: task.submissions.map do |submission|
+          {
+            url: url_for(submission),
+            filename: submission.filename.to_s
           }
         end
       }
     end
-    render json: assigned_sub_tasks_with_names, status: :ok
-  end
 
+    render json: assigned_sub_tasks_with_details, status: :ok
+  end
   def create
     sub_task_ids = params[:sub_task_ids]
     assigned_main_task_id = params[:assigned_main_task_id]
