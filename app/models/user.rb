@@ -44,4 +44,8 @@ class User < ApplicationRecord
       usr: self.id
     })
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+    %w[id name email role account_status created_at updated_at]
+  end
 end

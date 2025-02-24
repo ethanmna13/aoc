@@ -19,3 +19,15 @@
     align-items: center;
     margin-top: 1.25rem; 
 }
+
+.vb-statusIcon--emphasis {
+    background-color: #CDEBD7;
+}
+
+.vb-statusIcon--emphasis, .vb-statusIcon--disabled {
+    color: #323232;
+}
+
+.vb-button--appearanceTertiary.vb-button--danger {
+    color: #323232;
+}
