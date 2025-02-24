@@ -4,14 +4,23 @@ class Api::V1::Admin::UsersController < ApplicationController
   before_action :set_user, only: [ :update, :destroy ]
 
   def index
-    users = User.select(:id, :email, :name, :role, :account_status)
-    if users.empty?
-      render json: { message: "No users found" }
+    @q = User.ransack(params[:q])
+    users = case params[:role]
+    when "admin"
+      @q.result.admins
+    when "mentor"
+      @q.result.mentors
+    when "mentee"
+      @q.result.mentees
     else
-      render json: users
+      @q.result
     end
+    users = users.select(:id, :email, :name, :role, :account_status).paginate(page: params[:page], per_page: 10)
+    render json: {
+      users: users,
+      total_pages: users.total_pages
+    }
   end
-
   def mentors
     mentors = User.mentors
     render json: mentors

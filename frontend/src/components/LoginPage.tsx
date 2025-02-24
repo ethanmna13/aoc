@@ -22,7 +22,7 @@ const LoginPage = () => {
       if (role === "admin") {
         navigate('/admin/users');
       } else if (role === "mentor") {
-        navigate('/mentor/mentorships');
+        navigate('/mentor/dashboard');
       } else if (role === "mentee") {
         navigate('/mentee/TODO');
       } else {

@@ -7,6 +7,9 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
 
     if user && user.valid_password?(params[:user][:password])
       sign_in(user)
+      if user.account_status == "inactive"
+        user.update(account_status: "active")
+      end
       token = user.generate_jwt
       render json: {
         message: "Logged in successfully",

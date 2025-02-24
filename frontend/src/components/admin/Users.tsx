@@ -1,18 +1,20 @@
-import { ListTable, PageTitle, TableHeader, Button, TextField, Paragraph, FormControl, SelectBox, TaskDialog, FloatingMessageBlock, Pager } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, TextField, Paragraph, FormControl, SelectBox, TaskDialog, FloatingMessageBlock, Pager, StatusIcon, SearchField, Stack } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
-import { useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import React from "react";
 import { jwtDecode } from "jwt-decode";
+import { Plus, Trash } from "lucide-react";
+import "../css/Custom.css";
 
 const headers: TableHeader[] = [
-  { value: 'ID', ordering: 'asc' },
-  { value: 'Name', ordering: 'asc' },
+  { value: 'ID' },
+  { value: 'Name' },
   { value: 'Email' },
   { value: 'Role', alignCenter: true },
   { value: 'Account Status', alignCenter: true },
-  { value: 'Actions', alignCenter: true }
+  { value: '', alignCenter: true }
 ];
 
 interface Users {
@@ -45,6 +47,11 @@ const AdminUsersPage = () => {
   const navigate = useNavigate();
   const [isOpen, setOpen] = React.useState<boolean>(false);
   const toggle = () => setOpen(!isOpen);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isSearching] = useState<boolean>(false);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -63,8 +70,7 @@ const AdminUsersPage = () => {
           setError("Unauthorized");
           navigate('/unauthorized');
         } else {
-          console.log(decodedToken.sub)
-          fetchUsers();
+          fetchUsers(currentPage);
         }
       } catch {
         setError(`You are not logged in.`);
@@ -73,22 +79,44 @@ const AdminUsersPage = () => {
     };
 
     fetchCurrentUser();
-  }, [navigate]);
+  }, [navigate, currentPage, searchTerm, roleFilter]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1, search = "", role = "all") => {
     const token = localStorage.getItem('authToken');
     try {
-      const response = await axios.get("http://localhost:3000/api/v1/admin/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUsers(response.data);
-    } catch {
-      setError(`Failed to fetch users`);
+      const response = await axios.get(
+        `http://localhost:3000/api/v1/admin/users?page=${page}&q[email_cont]=${search}&role=${role}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setUsers(response.data.users || []);
+      setTotalPages(response.data.total_pages || 1);
+    } catch (error) {
+      setError("Failed to fetch users");
+      console.error(error);
     }
   };
+  
 
+  const handleRoleFilter = (role: string) => {
+    setRoleFilter(role);
+    fetchUsers(currentPage, searchTerm, role);
+  };
+  
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    fetchUsers(currentPage, term, roleFilter);
+  };
+  
+  useEffect(() => {
+    fetchUsers(currentPage, searchTerm, roleFilter);
+  }, [currentPage, searchTerm, roleFilter]);
+  
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchUsers(page, searchTerm, roleFilter);
+  };
+  
   const handleRegister = async () => {
     try {
       const token = localStorage.getItem('authToken');
@@ -97,7 +125,7 @@ const AdminUsersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers();
+      fetchUsers(currentPage);
       setRegisterUser({
         name: '',
         email: '',
@@ -121,7 +149,7 @@ const AdminUsersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers();
+      fetchUsers(currentPage);
       setSuccessMessage(`${editUser.name} successfully updated.`);
       setTimeout(() => setSuccessMessage(""), 3000);
       setEditUser(null);
@@ -139,7 +167,7 @@ const AdminUsersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers();
+      fetchUsers(currentPage);
       setSuccessMessage(`${deleteUser.name} successfully deleted.`);
       setTimeout(() => setSuccessMessage(""), 3000);
       setDeleteUser(null);
@@ -154,13 +182,30 @@ const AdminUsersPage = () => {
       { value: user.id },
       { value: user.name },
       { value: user.email },
-      { value: user.role, alignCenter: true },
-      { value: user.account_status === 0 ? "Inactive" : "Active", alignCenter: true },
+      { value: user.role.toString() === 'admin' ? 'Admin' : user.role.toString() === 'mentor' ? 'Mentor' : 'Mentee', alignCenter: true },
       {
         value: (
           <div>
-            <Button onClick={() => setEditUser(user)} small appearance="primary" mr={0.5}> Edit </Button>
-            <Button onClick={() => setDeleteUser(user)} small danger > Delete </Button>
+            {user.account_status.toString() === "active" ? (
+              <StatusIcon ma={0.5} type="emphasis" marginRight marginBottom>
+                Active
+              </StatusIcon>
+            ) : (
+              <StatusIcon ma={0.5} type="done" marginRight marginBottom>
+                Inactive
+              </StatusIcon>
+            )}
+          </div>
+        ),
+        alignCenter: true
+      },
+      {
+        value: (
+          <div>
+            <Button onClick={() => setEditUser(user)} small mr={0.5}> Edit </Button>
+            <Button IconComponent={Trash} onClick={() => setDeleteUser(user)} small danger appearance="tertiary" >
+              Delete
+            </Button>
           </div>
         ),
         alignCenter: true
@@ -171,11 +216,42 @@ const AdminUsersPage = () => {
   return (
     <div>
       {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
-        <PageTitle mt={1}>Manage Users</PageTitle>
-        <Button onClick={toggle} appearance="primary" ma={0.5} mb={1}> Register </Button>
+        <PageTitle mt={1} ml={1}>Users</PageTitle>
+        <Button IconComponent={Plus} onClick={toggle} ml={1} mb={0.5} mt={1}> Add User </Button>
+        <Stack direction="horizontal">
+        <FormControl mb={0.5} ml={1} label={"Email"}>
+        <SearchField
+          id="search"
+          label="Search"
+          placeholder="Search by email"
+          name="search"
+          width="medium"
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+        />
+        </FormControl>
+        <FormControl mb={0.5} ml={1} label={"Role"}>
+        <SelectBox
+          id="role-filter"
+          label="Filter by Role"
+          options={[
+            { name: 'All', value: 'all' },
+            { name: 'Admin', value: 'admin' },
+            { name: 'Mentor', value: 'mentor' },
+            { name: 'Mentee', value: 'mentee' }
+          ]}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRoleFilter(e.target.value)}
+          width="medium"
+        />
+        </FormControl>
+        </Stack>
         {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
         {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
-          <ListTable headers={headers} rows={userRows}></ListTable>
+        {users.length === 0 && !isSearching ? (
+        <Paragraph textAlign="center">No users found.</Paragraph>
+        ) : (
+          <ListTable headers={headers} rows={userRows} />
+        )}
         <TaskDialog 
           id="register-user-dialog" 
           isOpen={isOpen} 
@@ -188,8 +264,8 @@ const AdminUsersPage = () => {
           shouldCloseOnOverlayClickOrEsc={true} 
           mobileButtonLayout="column"
         >
-          <FormControl label="Name" fieldId="name">
-            <TextField
+          <FormControl label="Name" fieldId="name" required>
+            <TextField width="full"
               type="text"
               value={registerUser.name || ""}
               onChange={(e) =>
@@ -197,8 +273,8 @@ const AdminUsersPage = () => {
               }
             />
           </FormControl>
-          <FormControl label="Email" fieldId="email">
-            <TextField
+          <FormControl label="Email" fieldId="email" required>
+            <TextField width="full"
               type="email"
               value={registerUser.email || ""}
               onChange={(e) =>
@@ -207,7 +283,7 @@ const AdminUsersPage = () => {
             />
           </FormControl>
           <FormControl label="Role" fieldId="role">
-            <SelectBox
+            <SelectBox width="full"
               id="role"
               name="role"
               options={[
@@ -232,8 +308,8 @@ const AdminUsersPage = () => {
             shouldCloseOnOverlayClickOrEsc={true}
             mobileButtonLayout="column"
           >
-            <FormControl label="Name" fieldId="edit-name">
-              <TextField
+            <FormControl label="Name" fieldId="edit-name" required>
+              <TextField width="full"
                 type="text"
                 value={editUser.name}
                 onChange={(e) =>
@@ -242,7 +318,7 @@ const AdminUsersPage = () => {
               />
             </FormControl>
             <FormControl label="Role" fieldId="edit-role">
-              <SelectBox
+              <SelectBox width="full"
                 id="edit-role"
                 name="role"
                 options={[
@@ -251,17 +327,6 @@ const AdminUsersPage = () => {
                   { name: 'Mentee', value: '2' } 
                 ]}
                 onChange={(e) => setEditUser({ ...editUser, role: Number(e.target.value) })}
-              />
-            </FormControl>
-            <FormControl label="Account Status" fieldId="edit-status">
-              <SelectBox
-                id="edit-status"
-                name="status"
-                options={[
-                  { name: 'Inactive', value: '0' },
-                  { name: 'Active', value: '1' } 
-                ]}
-                onChange={(e) => setEditUser({ ...editUser, account_status: Number(e.target.value) })}
               />
             </FormControl>
           </TaskDialog>
@@ -283,7 +348,13 @@ const AdminUsersPage = () => {
             <Paragraph>Are you sure you want to delete {deleteUser.name}?</Paragraph>
           </TaskDialog>
         )}
-        <Pager currentPage={1} pageRange={1} pageCount={1} onPageChange={navigate}></Pager>
+        <Pager 
+          currentPage={currentPage} 
+          pageRange={5} 
+          pageCount={totalPages} 
+          onPageChange={handlePageChange} 
+          small={false} 
+        />
     </div>
   );
 };
