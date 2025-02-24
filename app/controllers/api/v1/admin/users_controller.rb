@@ -7,33 +7,19 @@ class Api::V1::Admin::UsersController < ApplicationController
     @q = User.ransack(params[:q])
     users = case params[:role]
     when "admin"
-      @q.result.admins
+              @q.result.admins
     when "mentor"
-      @q.result.mentors
+              @q.result.mentors
     when "mentee"
-      @q.result.mentees
+              @q.result.mentees
     else
-      @q.result
+              @q.result
     end
     users = users.select(:id, :email, :name, :role, :account_status).paginate(page: params[:page], per_page: 10)
     render json: {
-      users: users,
+      users: UserBlueprint.render_as_hash(users),
       total_pages: users.total_pages
     }
-  end
-  def mentors
-    mentors = User.mentors
-    render json: mentors
-  end
-
-  def mentees
-    mentees = User.mentees
-    render json: mentees
-  end
-
-  def admins
-    admins = User.admins
-    render json: admins
   end
 
   def create
@@ -42,7 +28,7 @@ class Api::V1::Admin::UsersController < ApplicationController
 
     if user.save
       UserMailer.welcome_email(user, password).deliver_now
-      render json: user, status: :created
+      render json: UserBlueprint.render_as_hash(user), status: :created
     else
       render json: { error: user.errors.full_messages }, status: :unprocessable_entity
     end
@@ -50,7 +36,7 @@ class Api::V1::Admin::UsersController < ApplicationController
 
   def update
     if @user.update(user_update_params)
-      render json: @user.slice(:id, :name, :role, :account_status)
+      render json: UserBlueprint.render_as_hash(@user)
     else
       render json: { error: @user.errors.full_messages }, status: :unprocessable_entity
     end
