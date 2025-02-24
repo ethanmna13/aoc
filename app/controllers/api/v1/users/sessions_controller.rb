@@ -10,7 +10,7 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
       token = user.generate_jwt
       render json: {
         message: "Logged in successfully",
-        user: user.slice(:id, :email, :name, :role, :account_status),
+        user: UserBlueprint.render_as_hash(user),
         token: token
       }, status: :ok
     else
@@ -19,7 +19,7 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
   end
 
   def index
-    render json: current_user.slice(:id, :name, :role, :account_status), status: :ok
+    render json: UserBlueprint.render_as_hash(current_user), status: :ok
   end
 
   def destroy
