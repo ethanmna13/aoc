@@ -18,8 +18,8 @@ Run migrations:
 Create User Account
 `rails db:seed`
 
-Admin email: spongebob@gmail.com
-Admin pw: 1234abcd
+Admin email: `spongebob@gmail.com`
+Admin pw: `1234abcd`
 
 Run api
 `rails s`
