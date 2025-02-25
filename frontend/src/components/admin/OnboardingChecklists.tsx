@@ -1,17 +1,19 @@
-import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, FileUploader, TaskDialog, FloatingMessageBlock } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, FileUploader, TaskDialog, FloatingMessageBlock, Stack, SearchField, SelectBox, SectionTitle } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { ChevronRight, Plus, Trash } from "lucide-react";
+import "../css/Custom.css";
 
 const headers: TableHeader[] = [
-  { value: 'ID', ordering: 'asc' },
-  { value: 'Name', ordering: 'asc' },
+  { value: 'ID' },
+  { value: 'Title' },
   { value: 'Description' },
   { value: 'Deadline' },
   { value: 'Created By' },
-  { value: 'Actions', alignCenter: true }
+  { value: '' }
 ];
 
 interface MainTask {
@@ -20,9 +22,10 @@ interface MainTask {
   description: string;
   deadline: string;
   users_id?: number;
-  user_name?: string; 
+  user_name?: string;
+  attachments?: Attachment[];
+  removedAttachmentIds?: number[];
 }
-
 interface SubTask {
   id?: number;
   name: string;
@@ -41,7 +44,7 @@ interface Attachment {
 
 
 interface CustomJwtPayload {
-  id: number;
+  sub: number;
   name: string;
   role: string;
 }
@@ -54,7 +57,14 @@ const AdminMainTasks = () => {
   const [error, setError] = useState<string>("");
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [successMessage, setSuccessMessage] = useState<string>("");
-  const [editTask, setEditTask] = useState<MainTask | null>(null);
+  const [editTask, setEditTask] = useState<{
+    id?: number;
+    name: string;
+    description: string;
+    deadline: string;
+    attachments?: Attachment[];
+    removedAttachmentIds?: number[];
+  } | null>(null);
   const [deleteTask, setDeleteTask] = useState<MainTask | null>(null);
   const [createTask, setCreateTask] = useState<MainTask | null>(null);
   const [currentUser, setCurrentUser] = useState<CustomJwtPayload | null>(null);
@@ -72,6 +82,8 @@ const AdminMainTasks = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
   const [loading, setLoading] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -118,54 +130,142 @@ const AdminMainTasks = () => {
     }
   };
 
-  const fetchMainTasks = async () => {
+  const fetchMainTasks = async (searchTerm: string = "", filter: string = "all") => {
     try {
       const response = await axios.get("http://localhost:3000/api/v1/admin/main_tasks", {
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`
+        },
+        params: {
+          q: {
+            name_cont: searchTerm,
+            users_id_eq: filter === "current_user" ? currentUser?.sub : null
+          }
         }
       });
       setMainTasks(response.data);
     } catch {
       setError("Failed to fetch main tasks");
     }
+  }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    fetchMainTasks(term, roleFilter);
+  };
+
+  const handleRoleFilter = (filter: string) => {
+    setRoleFilter(filter);
+    fetchMainTasks(searchTerm, filter);
   };
 
   const handleCreate = async () => {
     if (!createTask || !currentUser) return;
+  
+    const formData = new FormData();
+    formData.append("main_task[name]", createTask.name);
+    formData.append("main_task[description]", createTask.description);
+    formData.append("main_task[deadline]", createTask.deadline);
+    formData.append("main_task[users_id]", currentUser.sub.toString());
+  
+    if (newFiles) {
+      newFiles.forEach((file) => {
+        formData.append("main_task[attachments][]", file);
+      });
+    }
+  
     try {
-      const taskWithUserId = { ...createTask, users_id: currentUser.id };
-      await axios.post("http://localhost:3000/api/v1/admin/main_tasks", taskWithUserId, {
+      await axios.post("http://localhost:3000/api/v1/admin/main_tasks", formData, {
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
-        }
-    });
-      setSuccessMessage(`${taskWithUserId.name} successfully created.`);
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setSuccessMessage(`${createTask.name} successfully created.`);
       setTimeout(() => setSuccessMessage(""), 3000);
       fetchMainTasks();
       setCreateTask(null);
+      setNewFiles([]);
     } catch {
       setError("Failed to create main task");
     }
   };
-
+  
   const handleUpdate = async () => {
     if (!editTask) return;
-    try {
-      await axios.put(`http://localhost:3000/api/v1/admin/main_tasks/${editTask.id}`, editTask, {
-        
-        withCredentials: true,headers: {
-          Authorization: `Bearer ${token}`, 
-        }
+  
+    const formData = new FormData();
+    formData.append("main_task[name]", editTask.name);
+    formData.append("main_task[description]", editTask.description);
+    formData.append("main_task[deadline]", editTask.deadline);
+  
+    if (newFiles) {
+      newFiles.forEach((file) => {
+        formData.append("main_task[attachments][]", file);
       });
+    }
+  
+    try {
+      await axios.put(`http://localhost:3000/api/v1/admin/main_tasks/${editTask.id}`, formData, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
+      const response = await axios.get(`http://localhost:3000/api/v1/admin/main_tasks/${editTask.id}`, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      setMainTasks((prevTasks) =>
+        prevTasks.map((task) => (task.id === editTask.id ? response.data : task))
+      );
+  
       setSuccessMessage(`${editTask.name} successfully updated.`);
       setTimeout(() => setSuccessMessage(""), 3000);
-      fetchMainTasks();
       setEditTask(null);
+      setNewFiles([]);
     } catch {
       setError("Failed to update main task");
+    }
+  };
+
+  const handleRemoveAttachment = async (taskId: number, attachmentId: number) => {
+    try {
+      await axios.delete(
+        `http://localhost:3000/api/v1/admin/main_tasks/${taskId}/remove_attachment`,
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: { attachment_id: attachmentId },
+        }
+      );
+  
+      setEditTask((prevTask) => {
+        if (!prevTask) return prevTask;
+  
+        const updatedAttachments = prevTask.attachments?.filter(
+          (attachment) => attachment.id !== attachmentId
+        );
+  
+        return {
+          ...prevTask,
+          attachments: updatedAttachments,
+        };
+      });
+  
+      setSuccessMessage("Attachment removed successfully.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch {
+      setError("Failed to remove attachment.");
     }
   };
 
@@ -221,8 +321,7 @@ const AdminMainTasks = () => {
       fetchSubTasks(selectedMainTask.id);
       setCreateSubTask(null);
       setNewFiles([]); 
-    } catch (err) {
-      console.error("Failed to create sub-task:", err);
+    } catch {
       setError("Failed to create sub task");
     }
   };
@@ -263,8 +362,7 @@ const AdminMainTasks = () => {
       fetchSubTasks(selectedMainTask.id);
       setEditSubTask(null);
       setNewFiles([]);
-    } catch (err) {
-      console.error("Failed to update sub-task:", err);
+    } catch {
       setError("Failed to update sub task");
     }
   };
@@ -290,16 +388,36 @@ const AdminMainTasks = () => {
   const taskRows = mainTasks.map(task => ({
     cells: [
       { value: task.id },
-      { value: task.name },
+      {
+        value: task.attachments && task.attachments.length > 0 ? (
+          <a
+            href={task.attachments[0].url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {task.name}
+          </a>
+        ) : (
+          task.name
+        ),
+      },
       { value: task.description },
-      { value: task.deadline },
+      {
+        value: task.deadline ? (
+          new Date(task.deadline).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        ) : (
+          "N/A"
+        ),
+      },
       { value: task.user_name || "Unknown" }, 
       {
         value: (
           <div>
-            <Button onClick={() => setEditTask(task)} small mr={0.5} appearance="primary"> Edit </Button>
-            <Button onClick={() => setDeleteTask(task)} small danger mr={0.5}> Delete </Button>
-            <Button
+            <Button mr={0.5} IconComponent={ChevronRight} iconPosition="right"
               onClick={() => {
                 if (task.id) {
                   setSelectedMainTask(task);
@@ -313,6 +431,21 @@ const AdminMainTasks = () => {
             >
               View Sub Tasks
             </Button>
+            <Button
+                onClick={() => {
+                  setEditTask({
+                    ...task,
+                    attachments: task.attachments || [],
+                    removedAttachmentIds: [],
+                  });
+                  setNewFiles([]);
+                }}
+                small
+                mr={0.5}
+            >
+                Edit
+            </Button>
+            <Button IconComponent={Trash} onClick={() => setDeleteTask(task)} small danger appearance="tertiary"> Delete </Button>
           </div>
         ),
         alignRight: true
@@ -326,8 +459,33 @@ const AdminMainTasks = () => {
   return (
     <div>
        {currentUser && <NavBar name={currentUser.name} role={currentUser.role} />}
-      <PageTitle mt={1}>Manage Onboarding Checklists</PageTitle>
-      <Button onClick={() => setCreateTask({ name: "", description: "", deadline: "", users_id: currentUser?.id })} mt={0.5} mb={1} appearance="primary"> Create Task </Button>
+      <PageTitle mt={1} ml={1}>Onboarding Checklists</PageTitle>
+      <Button IconComponent={Plus} onClick={() => setCreateTask({ name: "", description: "", deadline: "", users_id: currentUser?.sub })} ml={1} mb={0.5} mt={1}>Add Onboarding Checklist</Button>
+      <Stack direction="horizontal">
+        <FormControl mb={0.5} ml={1} label={"Title"}>
+        <SearchField
+          id="search"
+          label="title"
+          placeholder="Search by title"
+          name="search"
+          width="medium"
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+        />
+        </FormControl>
+        <FormControl mb={0.5} ml={1} label={"Created By"}>
+        <SelectBox
+          id="createdby-filter"
+          label="Filter by Author"
+          options={[
+            { name: 'All', value: 'all' },
+            { name: 'Current User', value: 'current_user' }
+          ]}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRoleFilter(e.target.value)}
+          width="medium"
+        />
+        </FormControl>
+        </Stack>
       {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
       {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
       <ListTable headers={headers} rows={taskRows}></ListTable>
@@ -335,16 +493,17 @@ const AdminMainTasks = () => {
       {/* Create Task Modal */}
       {createTask && (
         <TaskDialog
-        id="create-task-dialog" 
-        isOpen={Boolean(createTask)} 
-        title="Create Main Task" 
-        onRequestClose={() => setCreateTask(null)}
-        closeButtonLabel="Cancel"
-        primaryButtonLabel="Create"
-        onPrimaryAction={handleCreate}
-        shouldCloseOnOverlayClickOrEsc={true}>
-          <FormControl label="Name" fieldId="name">
-            <TextField
+          id="create-task-dialog"
+          isOpen={Boolean(createTask)}
+          title="New Main Task"
+          onRequestClose={() => setCreateTask(null)}
+          closeButtonLabel="Close"
+          primaryButtonLabel="Save"
+          onPrimaryAction={handleCreate}
+          shouldCloseOnOverlayClickOrEsc={true}
+        >
+          <FormControl label="Name" fieldId="name" required>
+            <TextField width="full"
               type="text"
               value={createTask.name}
               onChange={(e) =>
@@ -353,40 +512,67 @@ const AdminMainTasks = () => {
             />
           </FormControl>
           <FormControl label="Description" fieldId="description">
-            <TextArea
+            <TextArea width="full"
               value={createTask.description}
               onChange={(e) =>
                 setCreateTask({ ...createTask, description: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="deadline">
+          <FormControl label="Deadline" fieldId="deadline" required>
             <input
-              type="datetime-local"
-              value={createTask.deadline}
+              type="date"
+              value={createTask.deadline ? createTask.deadline.split("T")[0] : ""}
               onChange={(e) =>
-                setCreateTask({ ...createTask, deadline: e.target.value })
+                setCreateTask({ ...createTask, deadline: e.target.value})
               }
               className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </FormControl>
-          <div className="flex gap-2">
-          </div>
+          <FormControl label="Attachments" fieldId="attachments">
+            <FileUploader width="medium"
+              fileLabel="Attachments"
+              multiple={true}
+              onFileSelect={(files: FileList | File[]) => {
+                const fileArray = Array.from(files);
+                setNewFiles(fileArray);
+              }}
+              processingMessage="Uploading..."
+            />
+            {/* Display newly uploaded files */}
+            {newFiles.map((file, index) => (
+              <div key={index} className="flex items-center mt-2">
+                <span>{file.name}</span>
+                <Button
+                  onClick={() => {
+                    const updatedFiles = newFiles.filter((_, i) => i !== index);
+                    setNewFiles(updatedFiles);
+                  }}
+                  small
+                  danger
+                  ml={2}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </FormControl>
         </TaskDialog>
       )}
 
       {/* Edit Task Modal */}
       {editTask && (
         <TaskDialog
-        id="edit-task-dialog"
-        isOpen={Boolean(editTask)}
-        title="Edit Main Task"
-        onRequestClose={() => setEditTask(null)}
-        closeButtonLabel="Cancel"
-        primaryButtonLabel="Save"
-        onPrimaryAction={handleUpdate}
-        shouldCloseOnOverlayClickOrEsc={true}>
-          <FormControl label="Name" fieldId="edit-name">
+          id="edit-task-dialog"
+          isOpen={Boolean(editTask)}
+          title={`Edit ${selectedMainTask?.name}`}
+          onRequestClose={() => setEditTask(null)}
+          closeButtonLabel="Cancel"
+          primaryButtonLabel="Save"
+          onPrimaryAction={handleUpdate}
+          shouldCloseOnOverlayClickOrEsc={true}
+        >
+          <FormControl label="Name" fieldId="edit-name" required>
             <TextField
               type="text"
               value={editTask.name}
@@ -403,15 +589,67 @@ const AdminMainTasks = () => {
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="edit-deadline">
+          <FormControl label="Deadline" fieldId="edit-deadline" required>
             <input
-              type="datetime-local"
-              value={editTask.deadline}
+              type="date"
+              value={editTask.deadline ? editTask.deadline.split("T")[0] : ""}
               onChange={(e) =>
                 setEditTask({ ...editTask, deadline: e.target.value })
               }
               className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500"
             />
+          </FormControl>
+          <FormControl label="Attachments" fieldId="attachments">
+            <FileUploader
+              fileLabel="Attachments"
+              multiple={true}
+              onFileSelect={(files: FileList | File[]) => {
+                const fileArray = Array.from(files);
+                setNewFiles(fileArray);
+              }}
+              processingMessage="Uploading..."
+            />
+            {/* Display existing attachments */}
+            {editTask.attachments?.map((attachment, index) => (
+              <div key={index} className="flex items-center mt-2">
+                <a
+                  href={attachment.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {attachment.filename}
+                </a>
+                <Button
+                  onClick={() => {
+                    if (attachment.id && editTask.id) {
+                      handleRemoveAttachment(editTask.id, attachment.id);
+                    }
+                  }}
+                  small
+                  danger
+                  ml={2}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+            {/* Display newly uploaded files */}
+            {newFiles.map((file, index) => (
+              <div key={index} className="flex items-center mt-2">
+                <span>{file.name}</span>
+                <Button
+                  onClick={() => {
+                    const updatedFiles = newFiles.filter((_, i) => i !== index);
+                    setNewFiles(updatedFiles);
+                  }}
+                  small
+                  danger
+                  ml={2}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
           </FormControl>
         </TaskDialog>
       )}
@@ -421,14 +659,16 @@ const AdminMainTasks = () => {
         <TaskDialog
         id="delete-task-dialog"
         isOpen={Boolean(deleteTask)}
-        title="Confirm Delete"
+        title="Are you sure you want to delete this checklist?"
         onRequestClose={() => setDeleteTask(null)}
         closeButtonLabel="Cancel"
         primaryButtonLabel="Delete"
         danger={true}
         onPrimaryAction={handleDelete}
         shouldCloseOnOverlayClickOrEsc={true}>
-          <Paragraph>Are you sure you want to delete {deleteTask.name}?</Paragraph>
+          <Paragraph textAlign="center">Name: {deleteTask.name}</Paragraph>
+          <Paragraph textAlign="center">Created By: {deleteTask.user_name}</Paragraph>
+          <SectionTitle headlineLevel={1} textAlign="center">Sub Tasks of this checklist will also be deleted.</SectionTitle>
           <div className="flex gap-2">
           </div>
         </TaskDialog>
@@ -437,44 +677,59 @@ const AdminMainTasks = () => {
       {/* View Sub Tasks Modal */}
       {viewSubTasksModalOpen && (
         <FullScreenModal isOpen={viewSubTasksModalOpen} title={`Sub Tasks for ${selectedMainTask?.name}`} onRequestClose={() => setViewSubTasksModalOpen(false)}>
-          <Button onClick={() => setCreateSubTask({ name: "", description: "", deadline: "", users_id: currentUser?.id })} ma={0.5} appearance="primary"> Create Sub Task </Button>
+          <SectionTitle>{selectedMainTask?.description}</SectionTitle>
+          <Paragraph mt={0.5} mb={1}>Deadline: {selectedMainTask?.deadline ? (
+                        new Date(selectedMainTask.deadline).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      ): ( "N/A")}</Paragraph>
+          <Button onClick={() => setCreateSubTask({ name: "", description: "", deadline: "", users_id: currentUser?.sub })}  IconComponent={Plus} > Add Sub Task </Button>
             {subTasks.length === 0 ? (
               <Paragraph>No sub-tasks available.</Paragraph>
             ) : (
-              <ListTable ma={2}
+              <ListTable mt={1} mb={1}
                 headers={[
+                  { value: 'ID' },
                   { value: 'Name' },
                   { value: 'Description' },
                   { value: 'Deadline' },
                   { value: 'Created By' },
-                  { value: 'Attachments' },
-                  { value: 'Actions', alignRight: true },
+                  { value: '', alignRight: true },
                 ]}
                 rows={subTasks.map(subTask => ({
                   cells: [
-                    { value: subTask.name },
+                    { value: subTask.id },
+                    {
+                      value: subTask.attachments && subTask.attachments.length > 0 ? (
+                        <a
+                          href={subTask.attachments[0].url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {subTask.name}
+                        </a>
+                      ) : (
+                        subTask.name
+                      ),
+                    },
                     { value: subTask.description },
-                    { value: subTask.deadline },
+                    {
+                      value: subTask.deadline ? (
+                        new Date(subTask.deadline).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      ) : (
+                        "N/A" 
+                      ),
+                    },
                     { value: subTask.user_name || "Unknown" },
                     {
                       value: (
                         <div>
-                          {subTask.attachments?.map((attachment: any, index: number) => (
-                            <a
-                              key={index}
-                              href={attachment.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {attachment.filename}
-                            </a>
-                          ))}
-                        </div>
-                      ),
-                    },
-                    {
-                      value: (
-                        <div className="flex space-x-2">
                           <Button
                             onClick={() =>
                               setEditSubTask({
@@ -486,11 +741,10 @@ const AdminMainTasks = () => {
                             }
                             small
                             mr={0.5}
-                            appearance="primary"
                           >
                             Edit
                           </Button>
-                          <Button onClick={() => setDeleteSubTask(subTask)} small danger> Delete </Button>
+                          <Button IconComponent={Trash} onClick={() => setDeleteSubTask(subTask)} small danger appearance="tertiary"> Delete </Button>
                         </div>
                       ),
                       alignRight: true,
@@ -508,15 +762,15 @@ const AdminMainTasks = () => {
         <TaskDialog
         id="create-sub-task-dialog"
         isOpen={Boolean(createSubTask)}
-        title="Create Sub Task"
+        title={`New Sub Task for ${selectedMainTask?.name}`}
         onRequestClose={() => setCreateSubTask(null)}
-        closeButtonLabel="Cancel"
-        primaryButtonLabel="Create"
+        closeButtonLabel="Close"
+        primaryButtonLabel="Save"
         onPrimaryAction={handleCreateSubTask}
         shouldCloseOnOverlayClickOrEsc={true}
         >
-          <FormControl label="Name" fieldId="sub-task-name">
-            <TextField
+          <FormControl label="Name" fieldId="sub-task-name" required>
+            <TextField width="full"
               type="text"
               value={createSubTask.name}
               onChange={(e) =>
@@ -525,17 +779,17 @@ const AdminMainTasks = () => {
             />
           </FormControl>
           <FormControl label="Description" fieldId="sub-task-description">
-            <TextArea
+            <TextArea width="full"
               value={createSubTask.description}
               onChange={(e) =>
                 setCreateSubTask({ ...createSubTask, description: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="sub-task-deadline">
+          <FormControl label="Deadline" fieldId="sub-task-deadline" required>
             <input
-              type="datetime-local"
-              value={createSubTask.deadline}
+              type="date"
+              value={createSubTask.deadline ? createSubTask.deadline.split("T")[0] : ""}
               onChange={(e) =>
                 setCreateSubTask({ ...createSubTask, deadline: e.target.value })
               }
@@ -575,15 +829,15 @@ const AdminMainTasks = () => {
         <TaskDialog
           id="edit-sub-task-modal"
           isOpen={Boolean(editSubTask)}
-          title="Edit Sub Task"
+          title={`Edit ${editSubTask.name}`}
           onRequestClose={() => setEditSubTask(null)}
-          closeButtonLabel="Cancel"
+          closeButtonLabel="Close"
           primaryButtonLabel="Save"
           onPrimaryAction={handleUpdateSubTask}
           shouldCloseOnOverlayClickOrEsc={true}
         >
-          <FormControl label="Name" fieldId="edit-sub-task-name">
-            <TextField
+          <FormControl label="Name" fieldId="edit-sub-task-name" required>
+            <TextField width="full"
               type="text"
               value={editSubTask.name}
               onChange={(e) =>
@@ -592,17 +846,17 @@ const AdminMainTasks = () => {
             />
           </FormControl>
           <FormControl label="Description" fieldId="edit-sub-task-description">
-            <TextArea
+            <TextArea width="full"
               value={editSubTask.description}
               onChange={(e) =>
                 setEditSubTask({ ...editSubTask, description: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="edit-sub-task-deadline">
+          <FormControl label="Deadline" fieldId="edit-sub-task-deadline" required>
             <input
-              type="datetime-local"
-              value={editSubTask.deadline}
+              type="date"
+              value={editSubTask.deadline ? editSubTask.deadline.split("T")[0] : ""}
               onChange={(e) =>
                 setEditSubTask({ ...editSubTask, deadline: e.target.value })
               }
@@ -673,18 +927,19 @@ const AdminMainTasks = () => {
         <TaskDialog
         id="delete-sub-task-dialog"
         isOpen={Boolean(deleteSubTask)}
-        title="Confirm Delete"
+        title="Are you sure you want to delete this Sub Task?"
         onRequestClose={() => setDeleteSubTask(null)}
         closeButtonLabel="Cancel"
         primaryButtonLabel="Delete"
         danger={true}
         onPrimaryAction={handleDeleteSubTask}
         shouldCloseOnOverlayClickOrEsc={true}>
-          <Paragraph>Are you sure you want to delete {deleteSubTask.name}?</Paragraph>
+          <Paragraph textAlign="center">Name: {deleteSubTask.name}</Paragraph>
+          <Paragraph textAlign="center">Created By: {deleteSubTask.user_name}</Paragraph>
         </TaskDialog>
       )}
     </div>
   );
-};
+  };
 
 export default AdminMainTasks;

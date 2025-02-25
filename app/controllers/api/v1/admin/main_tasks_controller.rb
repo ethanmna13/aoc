@@ -1,10 +1,12 @@
 class Api::V1::Admin::MainTasksController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_main_task, only: [ :show, :update, :destroy ]
+  before_action :set_main_task, only: [ :show, :update, :destroy,  :remove_attachment ]
   respond_to :json
 
   def index
-    main_tasks = MainTask.includes(:user).all
+    @q = MainTask.includes(:user).ransack(params[:q])
+    main_tasks = @q.result(distinct: true)
+
     tasks_with_user_names = main_tasks.map do |task|
       {
         id: task.id,
@@ -12,27 +14,42 @@ class Api::V1::Admin::MainTasksController < ApplicationController
         description: task.description,
         deadline: task.deadline,
         users_id: task.users_id,
-        user_name: task.user&.name
+        user_name: task.user&.name,
+        attachments: task.attachments.map { |attachment| { id: attachment.id, url: rails_blob_url(attachment), filename: attachment.filename } }
       }
     end
     render json: tasks_with_user_names
   end
 
   def show
-    render json: @main_task
+    render json: {
+      id: @main_task.id,
+      name: @main_task.name,
+      description: @main_task.description,
+      deadline: @main_task.deadline,
+      users_id: @main_task.users_id,
+      user_name: @main_task.user&.name,
+      attachments: @main_task.attachments.map { |attachment| { id: attachment.id, url: rails_blob_url(attachment), filename: attachment.filename } }
+    }
   end
-
   def create
     main_task = MainTask.new(main_task_params.merge(users_id: current_user.id))
 
     if main_task.save
+      if params[:main_task][:attachments]
+        params[:main_task][:attachments].each do |attachment|
+          main_task.attachments.attach(attachment)
+        end
+      end
+
       render json: {
         id: main_task.id,
         name: main_task.name,
         description: main_task.description,
         deadline: main_task.deadline,
         users_id: main_task.users_id,
-        user_name: main_task.user&.name
+        user_name: main_task.user&.name,
+        attachments: main_task.attachments.map { |attachment| { id: attachment.id, url: rails_blob_url(attachment), filename: attachment.filename } }
       }, status: :created
     else
       render json: { error: main_task.errors.full_messages }, status: :unprocessable_entity
@@ -41,17 +58,33 @@ class Api::V1::Admin::MainTasksController < ApplicationController
 
   def update
     if @main_task.update(main_task_params)
+      if params[:main_task][:remove_attachment_ids]
+        params[:main_task][:remove_attachment_ids].each do |attachment_id|
+          attachment = @main_task.attachments.find_by(id: attachment_id)
+          attachment.purge if attachment
+        end
+      end
+
       render json: {
         id: @main_task.id,
         name: @main_task.name,
         description: @main_task.description,
         deadline: @main_task.deadline,
         users_id: @main_task.users_id,
-        user_name: @main_task.user&.name
+        user_name: @main_task.user&.name,
+        attachments: @main_task.attachments.map { |attachment| { id: attachment.id, url: rails_blob_url(attachment), filename: attachment.filename.to_s } }
       }
     else
       render json: { error: @main_task.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  def remove_attachment
+    attachment = @main_task.attachments.find(params[:attachment_id])
+    attachment.purge
+    render json: { message: "Attachment removed successfully" }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Attachment not found" }, status: :not_found
   end
 
   def destroy
@@ -71,6 +104,6 @@ class Api::V1::Admin::MainTasksController < ApplicationController
   end
 
   def main_task_params
-    params.require(:main_task).permit(:name, :description, :deadline)
+    params.require(:main_task).permit(:name, :description, :deadline, attachments: [], remove_attachment_ids: [])
   end
 end

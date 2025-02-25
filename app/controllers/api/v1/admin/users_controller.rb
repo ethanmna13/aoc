@@ -22,6 +22,21 @@ class Api::V1::Admin::UsersController < ApplicationController
     }
   end
 
+  def mentors
+    mentors = User.mentors
+    render json: mentors
+  end
+
+  def mentees
+    mentees = User.mentees
+    render json: mentees
+  end
+
+  def admins
+    admins = User.admins
+    render json: admins
+  end
+
   def create
     password = SecureRandom.hex(10)
     user = User.new(user_params.merge(password: password, password_confirmation: password))
