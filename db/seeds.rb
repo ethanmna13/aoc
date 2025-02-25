@@ -15,3 +15,18 @@
 #   { name: "Ly", email: "ly@gmail.com", password: "1234abcd", role: 1, account_status: 1 },
 #  { name: "Diana", email: "diana@gmail.com", password: "1234abcd", role: 2, account_status: 1 }
 #  ])
+
+require 'securerandom'
+
+admin_email = "spongebob@gmail.com"
+admin_name = "Spongebob"
+password = "1234abcd"
+
+User.create!(
+  email: admin_email,
+  name: admin_name,
+  role: :admin,
+  account_status: :active,
+  password: password,
+  password_confirmation: password
+)
