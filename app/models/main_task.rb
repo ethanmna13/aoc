@@ -6,6 +6,6 @@ class MainTask < ApplicationRecord
   has_many_attached :attachments
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[name]
+    %w[name users_id]
   end
 end
