@@ -12,6 +12,8 @@ class Api::V1::AssignedSubTasksController < ApplicationController
       {
         id: task.id,
         mentorships_id: task.mentorships_id,
+        mentor_name: task.mentorship.mentor.name,
+        mentee_name: task.mentorship.mentee.name,
         mentorship_name: "#{task.mentorship.mentor.name} & #{task.mentorship.mentee.name}",
         assigned_main_tasks_id: task.assigned_main_tasks_id,
         sub_task_id: task.sub_task_id,

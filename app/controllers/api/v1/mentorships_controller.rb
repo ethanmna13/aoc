@@ -3,20 +3,37 @@ class Api::V1::MentorshipsController < ApplicationController
   before_action :set_mentorship, only: [ :update, :destroy ]
 
   def index
-    mentorships = Mentorship.includes(:mentor, :mentee).all
+    @q = Mentorship.includes(:mentor, :mentee).ransack(params[:q])
+    mentorships = @q.result(distinct: true)
 
-    render json: mentorships.map { |mentorship|
-      {
-        id: mentorship.id,
-        mentor_id: mentorship.mentor.id,
-        mentee_id: mentorship.mentee.id,
-        mentor_name: mentorship.mentor.name,
-        mentor_email: mentorship.mentor.email,
-        mentee_name: mentorship.mentee.name,
-        mentee_email: mentorship.mentee.email
+    if params[:mentee_id].present?
+      mentorships = mentorships.where(mentee_id: params[:mentee_id])
+    end
+
+    mentorships = mentorships.paginate(page: params[:page], per_page: 10)
+
+
+    render json: {
+      mentorships: mentorships.map { |mentorship|
+        {
+          id: mentorship.id,
+          mentor_id: mentorship.mentor.id,
+          mentee_id: mentorship.mentee.id,
+          mentor_name: mentorship.mentor.name,
+          mentor_email: mentorship.mentor.email,
+          mentee_name: mentorship.mentee.name,
+          mentee_email: mentorship.mentee.email
+        }
+      },
+      pagination: {
+        current_page: mentorships.current_page,
+        total_pages: mentorships.total_pages,
+        total_entries: mentorships.total_entries
       }
     }
   end
+
+
 
   def create
     @mentorship = Mentorship.new(mentorship_params)

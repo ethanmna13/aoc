@@ -45,7 +45,7 @@ class Api::V1::Admin::UsersController < ApplicationController
       UserMailer.welcome_email(user, password).deliver_now
       render json: UserBlueprint.render_as_hash(user), status: :created
     else
-      render json: { error: user.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: user.errors.messages }, status: :unprocessable_entity
     end
   end
 
@@ -53,7 +53,7 @@ class Api::V1::Admin::UsersController < ApplicationController
     if @user.update(user_update_params)
       render json: UserBlueprint.render_as_hash(@user)
     else
-      render json: { error: @user.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @user.errors.messages }, status: :unprocessable_entity
     end
   end
 

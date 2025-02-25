@@ -4,6 +4,7 @@ import LoginPage from "./components/LoginPage";
 import AdminUsers from "./components/admin/Users";
 import AdminOnboardingChecklists from "./components/admin/OnboardingChecklists";
 import AdminMentorshipPage from "./components/admin/MentorshipPage";
+import AdminAssignPage from "./components/admin/AssignTasks";
 import MentorDashboard from "./components/mentor/Dashboard";
 import MentorMentorships from "./components/mentor/Dashboard";
 import MenteeToDoPage from "./components/mentee/MenteeToDoPage";
@@ -22,6 +23,7 @@ function App() {
           <Route path="admin/users" element={<AdminUsers />} />
           <Route path="admin/main-tasks" element={<AdminOnboardingChecklists />} />
           <Route path="admin/mentorships" element={<AdminMentorshipPage />} />
+          <Route path="admin/assign" element={<AdminAssignPage />} />
           <Route path="mentor/dashboard" element={<MentorDashboard />} />
           <Route path="mentor/TODO" element={<MentorMentorships />} />
           <Route path="mentee/TODO" element={<MenteeToDoPage />} />

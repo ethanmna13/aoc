@@ -3,6 +3,8 @@ class User < ApplicationRecord
   enum :role, { admin: 0, mentor: 1, mentee: 2 }
   enum :account_status, { inactive: 0, active: 1 }
   validates :role, presence: true
+  validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP, message: "is not a valid email" }
+  validates :name, presence: true
 
   has_many :main_tasks, foreign_key: "users_id"
   has_many :sub_tasks, foreign_key: "users_id"
@@ -45,7 +47,11 @@ class User < ApplicationRecord
     })
   end
 
+  def self.ransackable_associations(auth_object = nil)
+    %w[main_tasks sub_tasks mentorships_as_mentor mentorships_as_mentee]
+  end
+
   def self.ransackable_attributes(auth_object = nil)
-    %w[email]
+    %w[name email]
   end
 end

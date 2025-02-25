@@ -4,29 +4,50 @@ class Api::V1::AssignedMainTasksController < ApplicationController
   before_action :set_mentorship, only: [ :create ]
 
   def index
-    if params[:mentorships_id].present?
-      assigned_main_tasks = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user)
-                                            .where(mentorships_id: params[:mentorships_id])
-    else
-      assigned_main_tasks = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user).all
+    if params[:q] && params[:q][:status_eq]
+      status_value = AssignedMainTask.statuses[params[:q][:status_eq]]
+      params[:q][:status_eq] = status_value if status_value
     end
+    @q = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user).ransack(params[:q])
+    assigned_main_tasks = @q.result(distinct: true).paginate(page: params[:page], per_page: params[:per_page] || 10)
 
     assigned_main_tasks_with_details = assigned_main_tasks.map do |task|
       {
         id: task.id,
         mentorships_id: task.mentorships_id,
+        mentor_name: task.mentorship.mentor.name,
+        mentee_name: task.mentorship.mentee.name,
         mentorship_name: "#{task.mentorship.mentor.name} & #{task.mentorship.mentee.name}",
         main_task_id: task.main_tasks_id,
         main_task_name: task.main_task.name,
         main_task_description: task.main_task.description,
         main_task_deadline: task.main_task.deadline,
         main_task_created_by: task.main_task.user.name,
-        status: task.status
+        status: task.status,
+        main_task_attachments: task.main_task.attachments.map do |attachment|
+          {
+            url: url_for(attachment),
+            filename: attachment.filename.to_s
+          }
+        end,
+        submissions: task.submissions.map do |submission|
+          {
+            id: submission.id,
+            url: url_for(submission),
+            filename: submission.filename.to_s
+          }
+        end
       }
     end
 
-    render json: assigned_main_tasks_with_details, status: :ok
+    render json: {
+      assigned_main_tasks: assigned_main_tasks_with_details,
+      total_pages: assigned_main_tasks.total_pages,
+      current_page: assigned_main_tasks.current_page,
+      total_entries: assigned_main_tasks.total_entries
+    }, status: :ok
   end
+
   def create
     main_tasks_ids = params[:main_tasks_ids]
 
@@ -54,30 +75,36 @@ class Api::V1::AssignedMainTasksController < ApplicationController
   def update
     assigned_main_task = AssignedMainTask.find(params[:id])
 
-    if params[:status].present?
-        assigned_main_task.update(status: params[:status])
+    if params[:assigned_main_task][:status]
+      assigned_main_task.update!(status: params[:assigned_main_task][:status])
     end
 
-    render json: {
-        id: assigned_main_task.id,
-        mentorships_id: assigned_main_task.mentorships_id,
-        mentorship_name: "#{assigned_main_task.mentorship.mentor.name} & #{assigned_main_task.mentorship.mentee.name}",
-        main_task_id: assigned_main_task.main_tasks_id,
-        main_task_name: assigned_main_task.main_task.name,
-        status: assigned_main_task.status
-    }, status: :ok
+    if params[:assigned_main_task][:submissions]
+      params[:assigned_main_task][:submissions].each do |submission|
+        assigned_main_task.submissions.attach(submission)
+      end
+    end
+
+    if params[:assigned_main_task][:remove_submission_ids]
+      params[:assigned_main_task][:remove_submission_ids].each do |id|
+        submission = assigned_main_task.submissions.find_by(id: id)
+        submission.purge if submission
+      end
+    end
+
+    render json: { message: "Submissions updated successfully", assigned_main_task: assigned_main_task }, status: :ok
   rescue ActiveRecord::RecordNotFound
-      render json: { error: "Assigned main task not found" }, status: :not_found
-  rescue => e
-      render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: "Assigned main-task not found" }, status: :not_found
   end
 
   def destroy
     assigned_main_task = AssignedMainTask.find(params[:id])
     assigned_main_task.destroy
     render json: { message: "Assigned main task and its sub tasks deleted successfully" }, status: :ok
-  rescue ActiveRecord::RecordNotFound => e
+  rescue ActiveRecord::RecordNotFound
     render json: { error: "Assigned main task not found" }, status: :not_found
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private
