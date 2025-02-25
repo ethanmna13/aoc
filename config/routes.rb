@@ -18,6 +18,9 @@ Rails.application.routes.draw do
           end
         end
         resources :main_tasks, only: [ :index, :show, :create, :update, :destroy ] do
+          member do
+            delete :remove_attachment, to: "main_tasks#remove_attachment"
+          end
           resources :sub_tasks, only: [ :index, :create, :update, :destroy ] do
             member do
               delete :remove_attachment
