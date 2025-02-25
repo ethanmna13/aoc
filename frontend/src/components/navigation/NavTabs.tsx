@@ -1,5 +1,5 @@
-import { MdSupervisedUserCircle, MdOutlineFactCheck, MdOutlinePeopleOutline } from "react-icons/md";
-
+import { MdOutlineFactCheck, MdOutlinePeopleOutline, MdCheck } from "react-icons/md";
+import { FaUserCheck } from "react-icons/fa";
 import { GlobalNavi } from "@freee_jp/vibes";
 
 import { useLocation } from "react-router";
@@ -26,11 +26,17 @@ function NavTabs({ role }: NavTabsProps) {
         current: location.pathname == "/admin/main-tasks" ? true : false,
     },
     {
-        title: "Mentorships",
+        title: "Assign Mentors",
         url: "/admin/mentorships",
-        IconComponent: MdSupervisedUserCircle,
+        IconComponent: FaUserCheck,
         current: location.pathname == "/admin/mentorships" ? true : false,
     },
+    {
+      title: "Assign Tasks",
+      url: "/admin/assign",
+      IconComponent: MdCheck,
+      current: location.pathname == "/admin/assign" ? true : false,
+    }
   ];
 
   const mentorNavLinks = [

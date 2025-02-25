@@ -265,9 +265,10 @@ const AdminUsersPage = () => {
           mobileButtonLayout="column"
         >
           <FormControl label="Name" fieldId="name" required>
-            <TextField width="full"
+            <TextField width="full" required id="name"
               type="text"
-              value={registerUser.name || ""}
+              error={!registerUser.name}
+              value={registerUser.name}
               onChange={(e) =>
                 setRegisterUser({ ...registerUser, name: e.target.value })
               }
@@ -276,7 +277,8 @@ const AdminUsersPage = () => {
           <FormControl label="Email" fieldId="email" required>
             <TextField width="full"
               type="email"
-              value={registerUser.email || ""}
+              error={!registerUser.email}
+              value={registerUser.email}
               onChange={(e) =>
                 setRegisterUser({ ...registerUser, email: e.target.value })
               }
@@ -309,7 +311,7 @@ const AdminUsersPage = () => {
             mobileButtonLayout="column"
           >
             <FormControl label="Name" fieldId="edit-name" required>
-              <TextField width="full"
+              <TextField width="full" required
                 type="text"
                 value={editUser.name}
                 onChange={(e) =>
