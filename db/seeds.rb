@@ -22,7 +22,7 @@ admin_email = "spongebob@gmail.com"
 admin_name = "Spongebob"
 password = "1234abcd"
 
-User.create!(
+admin = User.create!(
   email: admin_email,
   name: admin_name,
   role: :admin,
@@ -30,3 +30,5 @@ User.create!(
   password: password,
   password_confirmation: password
 )
+
+jwt_token = admin.generate_jwt
