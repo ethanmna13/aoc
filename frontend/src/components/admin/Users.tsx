@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Button, TextField, Paragraph, FormControl, SelectBox, TaskDialog, FloatingMessageBlock, Pager, StatusIcon, SearchField, Stack } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, TextField, Paragraph, FormControl, SelectBox, TaskDialog, FloatingMessageBlock, Pager, StatusIcon, SearchField, Stack, Message } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -272,7 +272,7 @@ const AdminUsersPage = () => {
           mobileButtonLayout="column"
         >
           <FormControl label="Name" fieldId="name" required>
-            <TextField width="full" required id="name"
+            <TextField width="full" required id="name" maxLength={30}
               type="text"
               error={!registerUser.name}
               value={registerUser.name}
@@ -280,9 +280,10 @@ const AdminUsersPage = () => {
                 setRegisterUser({ ...registerUser, name: e.target.value })
               }
             />
+            {error && <Message mt={1} error>Invalid/Empty Name</Message>}
           </FormControl>
           <FormControl label="Email" fieldId="email" required>
-            <TextField width="full"
+            <TextField width="full" maxLength={20}
               type="email"
               error={!registerUser.email}
               value={registerUser.email}
@@ -290,6 +291,7 @@ const AdminUsersPage = () => {
                 setRegisterUser({ ...registerUser, email: e.target.value })
               }
             />
+            {error && <Message mt={1} error>Invalid/Empty Email</Message>}
           </FormControl>
           <FormControl label="Role" fieldId="role">
             <SelectBox width="full"
@@ -318,13 +320,15 @@ const AdminUsersPage = () => {
             mobileButtonLayout="column"
           >
             <FormControl label="Name" fieldId="edit-name" required>
-              <TextField width="full" required
+              <TextField width="full" required maxLength={30}
                 type="text"
+                error={!editUser.name}
                 value={editUser.name}
                 onChange={(e) =>
                   setEditUser({ ...editUser, name: e.target.value })
                 }
               />
+              {error && <Message mt={1} error>Invalid/Empty Name</Message>}
             </FormControl>
             <FormControl label="Role" fieldId="edit-role">
               <SelectBox width="full"

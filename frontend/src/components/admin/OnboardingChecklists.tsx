@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, FileUploader, TaskDialog, FloatingMessageBlock, Stack, SearchField, SelectBox, SectionTitle, Pager } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, FileUploader, TaskDialog, FloatingMessageBlock, Stack, SearchField, SelectBox, SectionTitle, Pager, Message } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -513,24 +513,26 @@ const AdminMainTasks = () => {
           onPrimaryAction={handleCreate}
           shouldCloseOnOverlayClickOrEsc={true}
         >
-          <FormControl label="Name" fieldId="name" required>
-            <TextField width="full"
+          <FormControl label="Title" fieldId="name" required>
+            <TextField width="full" maxLength={30}
               type="text"
+              error={!createTask.name}
               value={createTask.name}
               onChange={(e) =>
                 setCreateTask({ ...createTask, name: e.target.value })
               }
             />
+            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="description">
-            <TextArea width="full"
+            <TextArea width="full" maxLength={100}
               value={createTask.description}
               onChange={(e) =>
                 setCreateTask({ ...createTask, description: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="deadline" required>
+          <FormControl label="Deadline" fieldId="deadline">
             <input
               type="date"
               value={createTask.deadline ? createTask.deadline.split("T")[0] : ""}
@@ -583,24 +585,26 @@ const AdminMainTasks = () => {
           onPrimaryAction={handleUpdate}
           shouldCloseOnOverlayClickOrEsc={true}
         >
-          <FormControl label="Name" fieldId="edit-name" required>
-            <TextField
+          <FormControl label="Title" fieldId="edit-name" required>
+            <TextField maxLength={25}
               type="text"
+              error={!editTask.name}
               value={editTask.name}
               onChange={(e) =>
                 setEditTask({ ...editTask, name: e.target.value })
               }
             />
+            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="edit-description">
-            <TextArea
+            <TextArea maxLength={100}
               value={editTask.description}
               onChange={(e) =>
                 setEditTask({ ...editTask, description: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="edit-deadline" required>
+          <FormControl label="Deadline" fieldId="edit-deadline">
             <input
               type="date"
               value={editTask.deadline ? editTask.deadline.split("T")[0] : ""}
@@ -780,24 +784,26 @@ const AdminMainTasks = () => {
         onPrimaryAction={handleCreateSubTask}
         shouldCloseOnOverlayClickOrEsc={true}
         >
-          <FormControl label="Name" fieldId="sub-task-name" required>
-            <TextField width="full"
+          <FormControl label="Title" fieldId="sub-task-name" required>
+            <TextField width="full" maxLength={30}
               type="text"
+              error={!createSubTask.name}
               value={createSubTask.name}
               onChange={(e) =>
                 setCreateSubTask({ ...createSubTask, name: e.target.value })
               }
             />
+            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="sub-task-description">
-            <TextArea width="full"
+            <TextArea width="full" maxLength={100}
               value={createSubTask.description}
               onChange={(e) =>
                 setCreateSubTask({ ...createSubTask, description: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="sub-task-deadline" required>
+          <FormControl label="Deadline" fieldId="sub-task-deadline">
             <input
               type="date"
               value={createSubTask.deadline ? createSubTask.deadline.split("T")[0] : ""}
@@ -847,24 +853,26 @@ const AdminMainTasks = () => {
           onPrimaryAction={handleUpdateSubTask}
           shouldCloseOnOverlayClickOrEsc={true}
         >
-          <FormControl label="Name" fieldId="edit-sub-task-name" required>
-            <TextField width="full"
+          <FormControl label="Title" fieldId="edit-sub-task-name" required>
+            <TextField width="full" maxLength={30}
               type="text"
+              error={!editSubTask.name}
               value={editSubTask.name}
               onChange={(e) =>
                 setEditSubTask({ ...editSubTask, name: e.target.value })
               }
             />
+            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="edit-sub-task-description">
-            <TextArea width="full"
+            <TextArea width="full" maxLength={100}
               value={editSubTask.description}
               onChange={(e) =>
                 setEditSubTask({ ...editSubTask, description: e.target.value })
               }
             />
           </FormControl>
-          <FormControl label="Deadline" fieldId="edit-sub-task-deadline" required>
+          <FormControl label="Deadline" fieldId="edit-sub-task-deadline">
             <input
               type="date"
               value={editSubTask.deadline ? editSubTask.deadline.split("T")[0] : ""}
