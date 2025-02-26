@@ -5,7 +5,7 @@ class Api::V1::Admin::MainTasksController < ApplicationController
 
   def index
     @q = MainTask.includes(:user).ransack(params[:q])
-    main_tasks = @q.result(distinct: true)
+    main_tasks = @q.result(distinct: true).paginate(page: params[:page], per_page: params[:per_page] || 10)
 
     tasks_with_user_names = main_tasks.map do |task|
       {
@@ -18,8 +18,14 @@ class Api::V1::Admin::MainTasksController < ApplicationController
         attachments: task.attachments.map { |attachment| { id: attachment.id, url: rails_blob_url(attachment), filename: attachment.filename } }
       }
     end
-    render json: tasks_with_user_names
+
+    render json: {
+      main_tasks: tasks_with_user_names,
+      total_pages: main_tasks.total_pages,
+      current_page: main_tasks.current_page
+    }
   end
+
 
   def show
     render json: {

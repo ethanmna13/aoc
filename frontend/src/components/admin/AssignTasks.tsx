@@ -159,7 +159,7 @@ const AssignTasksPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const mainTasksWithSubTasks = await Promise.all(
-        response.data.map(async (mainTask: MainTask) => {
+        response.data.main_tasks.map(async (mainTask: MainTask) => {
           const subTasksResponse = await axios.get(
             `http://localhost:3000/api/v1/admin/main_tasks/${mainTask.id}/sub_tasks`,
             {
@@ -327,6 +327,10 @@ const AssignTasksPage = () => {
             {task.status.toString() === "in_progress" ? (
               <StatusIcon mt={0.5} ml={1} type="progress" marginRight marginBottom>
                 In Progress
+              </StatusIcon>
+            ) : task.status.toString() === "not_started" ? (
+              <StatusIcon mt={0.5} ml={1} type="done" marginRight marginBottom>
+                Not Started
               </StatusIcon>
             ) : (
               <StatusIcon ma={0.5} type="emphasis" marginRight marginBottom>

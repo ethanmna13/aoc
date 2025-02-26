@@ -20,6 +20,7 @@ class Api::V1::AssignedSubTasksController < ApplicationController
         sub_task_name: task.sub_task.name,
         sub_task_description: task.sub_task.description,
         sub_task_deadline: task.sub_task.deadline,
+        updated_at: task.updated_at,
         sub_task_attachments: task.sub_task.attachments.map do |attachment|
           {
             url: url_for(attachment),
@@ -55,7 +56,7 @@ class Api::V1::AssignedSubTasksController < ApplicationController
         mentorships_id: @mentorship.id,
         sub_task_id: sub_task_id,
         assigned_main_tasks_id: assigned_main_task_id,
-        status: :in_progress
+        status: :not_started
       )
       assigned_sub_tasks << assigned_sub_task
     end
@@ -84,6 +85,8 @@ class Api::V1::AssignedSubTasksController < ApplicationController
       end
     end
 
+    update_main_task_status(assigned_sub_task.assigned_main_tasks_id)
+
     render json: { message: "Submissions updated successfully", assigned_sub_task: assigned_sub_task }, status: :ok
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Assigned sub-task not found" }, status: :not_found
@@ -103,6 +106,19 @@ class Api::V1::AssignedSubTasksController < ApplicationController
     @mentorship = Mentorship.find_by(id: params[:mentorships_id])
     unless @mentorship
       render json: { error: "Mentorship with ID #{params[:mentorships_id]} does not exist" }, status: :not_found
+    end
+  end
+
+  def update_main_task_status(assigned_main_task_id)
+    assigned_main_task = AssignedMainTask.find(assigned_main_task_id)
+    sub_tasks = AssignedSubTask.where(assigned_main_tasks_id: assigned_main_task_id)
+
+    if sub_tasks.all? { |task| task.status == "completed" }
+      assigned_main_task.update!(status: "completed")
+    elsif sub_tasks.any? { |task| task.status == "in_progress" }
+      assigned_main_task.update!(status: "in_progress")
+    else
+      assigned_main_task.update!(status: "not_started")
     end
   end
 end
