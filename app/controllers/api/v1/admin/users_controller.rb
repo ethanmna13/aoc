@@ -5,17 +5,22 @@ class Api::V1::Admin::UsersController < ApplicationController
 
   def index
     @q = User.ransack(params[:q])
-    users = case params[:role]
-    when "admin"
-              @q.result.admins
-    when "mentor"
-              @q.result.mentors
-    when "mentee"
-              @q.result.mentees
-    else
-              @q.result
+
+    users = @q.result
+
+    if params.dig(:q, :role_eq).present?
+      case params[:q][:role_eq]
+      when "admin"
+        users = users.admins
+      when "mentor"
+        users = users.mentors
+      when "mentee"
+        users = users.mentees
+      end
     end
+
     users = users.select(:id, :email, :name, :role, :account_status).paginate(page: params[:page], per_page: 10)
+
     render json: {
       users: UserBlueprint.render_as_hash(users),
       total_pages: users.total_pages

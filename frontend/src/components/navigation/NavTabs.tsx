@@ -43,7 +43,7 @@ function NavTabs({ role }: NavTabsProps) {
     {
         title: "Mentorships",
         url: "/mentor/dashboard",
-        IconComponent: MdOutlinePeopleOutline,
+        IconComponent: FaUserCheck,
         current: location.pathname == "/mentor/dashboard" ? true : false,
     }
   ];

@@ -24,6 +24,7 @@ class Api::V1::AssignedMainTasksController < ApplicationController
         main_task_deadline: task.main_task.deadline,
         main_task_created_by: task.main_task.user.name,
         status: task.status,
+        updated_at: task.updated_at,
         main_task_attachments: task.main_task.attachments.map do |attachment|
           {
             url: url_for(attachment),
@@ -62,7 +63,7 @@ class Api::V1::AssignedMainTasksController < ApplicationController
       assigned_main_task = AssignedMainTask.create!(
         mentorships_id: @mentorship.id,
         main_tasks_id: main_task_id,
-        status: :in_progress
+        status: :not_started
       )
       assigned_main_tasks << assigned_main_task
     end

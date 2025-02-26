@@ -1,4 +1,4 @@
-import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, FileUploader, TaskDialog, FloatingMessageBlock, Stack, SearchField, SelectBox, SectionTitle } from "@freee_jp/vibes";
+import { ListTable, PageTitle, TableHeader, Button, Paragraph, TextField, TextArea, FullScreenModal, FormControl, FileUploader, TaskDialog, FloatingMessageBlock, Stack, SearchField, SelectBox, SectionTitle, Pager } from "@freee_jp/vibes";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../navigation/NavBar";
@@ -84,6 +84,8 @@ const AdminMainTasks = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -102,7 +104,7 @@ const AdminMainTasks = () => {
           setError("Unauthorized");
           navigate('/unauthorized');
         } else {
-          fetchMainTasks();
+          fetchMainTasks(searchTerm, roleFilter, currentPage);
         }
       } catch {
         setError("Invalid token");
@@ -130,7 +132,7 @@ const AdminMainTasks = () => {
     }
   };
 
-  const fetchMainTasks = async (searchTerm: string = "", filter: string = "all") => {
+  const fetchMainTasks = async (searchTerm: string = "", filter: string = "all", page: number) => {
     try {
       const response = await axios.get("http://localhost:3000/api/v1/admin/main_tasks", {
         withCredentials: true,
@@ -141,10 +143,13 @@ const AdminMainTasks = () => {
           q: {
             name_cont: searchTerm,
             users_id_eq: filter === "current_user" ? currentUser?.sub : null
-          }
+          },
+          page: page,
+          per_page: 10
         }
       });
-      setMainTasks(response.data);
+      setMainTasks(response.data.main_tasks);
+      setTotalPages(response.data.total_pages || 1);
     } catch {
       setError("Failed to fetch main tasks");
     }
@@ -152,12 +157,17 @@ const AdminMainTasks = () => {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    fetchMainTasks(term, roleFilter);
+    fetchMainTasks(term, roleFilter, currentPage);
   };
 
   const handleRoleFilter = (filter: string) => {
     setRoleFilter(filter);
-    fetchMainTasks(searchTerm, filter);
+    fetchMainTasks(searchTerm, filter, currentPage);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchMainTasks(searchTerm, roleFilter, page);
   };
 
   const handleCreate = async () => {
@@ -185,7 +195,7 @@ const AdminMainTasks = () => {
       });
       setSuccessMessage(`${createTask.name} successfully created.`);
       setTimeout(() => setSuccessMessage(""), 3000);
-      fetchMainTasks();
+      fetchMainTasks(searchTerm, roleFilter, currentPage);
       setCreateTask(null);
       setNewFiles([]);
     } catch {
@@ -280,7 +290,7 @@ const AdminMainTasks = () => {
       });
       setSuccessMessage(`${deleteTask.name} successfully deleted.`);
       setTimeout(() => setSuccessMessage(""), 3000);
-      fetchMainTasks();
+      fetchMainTasks(searchTerm, roleFilter, currentPage);
       setDeleteTask(null);
     } catch {
       setError("Failed to delete main task");
@@ -489,6 +499,7 @@ const AdminMainTasks = () => {
       {error && (<FloatingMessageBlock error>{error}</FloatingMessageBlock>)}
       {successMessage && (<FloatingMessageBlock success>{successMessage}</FloatingMessageBlock>)}
       <ListTable headers={headers} rows={taskRows}></ListTable>
+      <Pager currentPage={currentPage} pageCount={totalPages} onPageChange={handlePageChange} mt={1} ml={1} />
 
       {/* Create Task Modal */}
       {createTask && (

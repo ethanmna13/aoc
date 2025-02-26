@@ -70,7 +70,7 @@ const AdminUsersPage = () => {
           setError("Unauthorized");
           navigate('/unauthorized');
         } else {
-          fetchUsers(currentPage);
+          fetchUsers(currentPage, searchTerm, roleFilter);
         }
       } catch {
         setError(`You are not logged in.`);
@@ -81,12 +81,22 @@ const AdminUsersPage = () => {
     fetchCurrentUser();
   }, [navigate, currentPage, searchTerm, roleFilter]);
 
-  const fetchUsers = async (page = 1, search = "", role = "all") => {
+  const fetchUsers = async (page: number, search: string = "", role: string = "all") => {
     const token = localStorage.getItem('authToken');
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/v1/admin/users?page=${page}&q[email_cont]=${search}&role=${role}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:3000/api/v1/admin/users`,
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            q: {
+              email_cont: search,
+              role_eq: role === "all" ? undefined : role,
+            },
+            page: page,
+            per_page: 10,
+          },
+        }
       );
       setUsers(response.data.users || []);
       setTotalPages(response.data.total_pages || 1);
@@ -95,6 +105,7 @@ const AdminUsersPage = () => {
       console.error(error);
     }
   };
+  
   
 
   const handleRoleFilter = (role: string) => {
@@ -106,10 +117,6 @@ const AdminUsersPage = () => {
     setSearchTerm(term);
     fetchUsers(currentPage, term, roleFilter);
   };
-  
-  useEffect(() => {
-    fetchUsers(currentPage, searchTerm, roleFilter);
-  }, [currentPage, searchTerm, roleFilter]);
   
   
   const handlePageChange = (page: number) => {
@@ -125,7 +132,7 @@ const AdminUsersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers(currentPage);
+      fetchUsers(currentPage, searchTerm, roleFilter);
       setRegisterUser({
         name: '',
         email: '',
@@ -149,7 +156,7 @@ const AdminUsersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers(currentPage);
+      fetchUsers(currentPage, searchTerm, roleFilter);
       setSuccessMessage(`${editUser.name} successfully updated.`);
       setTimeout(() => setSuccessMessage(""), 3000);
       setEditUser(null);
@@ -167,7 +174,7 @@ const AdminUsersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchUsers(currentPage);
+      fetchUsers(currentPage, searchTerm, roleFilter);
       setSuccessMessage(`${deleteUser.name} successfully deleted.`);
       setTimeout(() => setSuccessMessage(""), 3000);
       setDeleteUser(null);
