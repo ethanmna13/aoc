@@ -1,4 +1,4 @@
-import { Button, FloatingMessageBlock, FormControl, PageTitle, Paragraph, SearchField, SelectBox, ListTable, TaskDialog, TableHeader, Pager } from "@freee_jp/vibes";
+import { Button, FloatingMessageBlock, FormControl, PageTitle, Paragraph, SearchField, SelectBox, ListTable, TaskDialog, TableHeader, Pager, Message } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -246,23 +246,27 @@ const MentorshipPage = () => {
             <SelectBox width="full"
               id="selectBox-1"
               name="mentor"
+              error={!createMentorship.mentorID}
               options={mentors.map(mentor => ({
                 name: mentor.name,
-                value: mentor.id?.toString() ?? ''
+                value: mentor.id?.toString()
               }))}
               onChange={e => setCreateMentorship({ ...createMentorship, mentorID: Number(e.target.value) })}
             />
+            {error && <Message mt={1} error>No Mentor selected</Message>}
           </FormControl>
           <FormControl label="Select a Mentee" fieldId="selectBox-2" required>
             <SelectBox width="full"
               id="selectBox-2"
               name="mentee"
+              error={!createMentorship.menteeID}
               options={mentees.map(mentee => ({
                 name: mentee.name,
                 value: mentee.id?.toString() ?? ''
               }))}
               onChange={e => setCreateMentorship({ ...createMentorship, menteeID: Number(e.target.value) })}
             />
+            {error && <Message mt={1} error>No Mentee selected</Message>}
           </FormControl>
         </TaskDialog>
         <TaskDialog 

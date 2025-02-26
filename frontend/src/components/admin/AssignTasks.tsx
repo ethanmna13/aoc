@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Button, FloatingMessageBlock, FormControl, FullScreenModal, ListTable, Pager, PageTitle, Paragraph, SearchField, SelectBox, Stack, StatusIcon, TableHeader, TaskDialog } from "@freee_jp/vibes";
+import { Button, FloatingMessageBlock, FormControl, FullScreenModal, ListTable, Message, Pager, PageTitle, Paragraph, SearchField, SelectBox, Stack, StatusIcon, TableHeader, TaskDialog } from "@freee_jp/vibes";
 import NavBar from "../navigation/NavBar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -392,7 +392,12 @@ const AssignTasksPage = () => {
               <StatusIcon mt={0.5} ml={1} type="progress" marginRight marginBottom>
                 In Progress
               </StatusIcon>
-            ) : (
+            ) : 
+              task.status.toString() === "not_started" ? (
+                <StatusIcon mt={0.5} ml={1} type="done" marginRight marginBottom>
+                  Not Started
+                </StatusIcon>
+              ) : (
               <StatusIcon ma={0.5} type="emphasis" marginRight marginBottom>
                 Completed
               </StatusIcon>
@@ -474,27 +479,31 @@ const AssignTasksPage = () => {
         onPrimaryAction={handleAssignTasks}
         shouldCloseOnOverlayClickOrEsc
       >
-        <FormControl label="Select a Main Task" fieldId="selectBox-1" required>
+        <FormControl label="Select an Onboarding Checklist" fieldId="selectBox-1" required>
           <SelectBox width="full"
             id="selectBox-1"
             name="mainTask"
+            error={!selectedMainTask?.id}
             options={mainTasks.map(mainTask => ({
               name: mainTask.name,
               value: mainTask.id?.toString() ?? ''
             }))}
             onChange={e => setSelectedMainTask(mainTasks.find(mainTask => mainTask.id === Number(e.target.value)) || null)}
           />
+          {error && <Message mt={1} error>No Checklist selected</Message>}
         </FormControl>
         <FormControl label="Select a Mentee" fieldId="selectBox-2" required>
           <SelectBox width="full"
             id="selectBox-2"
             name="mentee"
+            error={!selectedMentee}
             options={mentees.map(mentee => ({
               name: mentee.name,
               value: mentee.id?.toString() ?? ''
             }))}
             onChange={e => setSelectedMentee(mentees.find(mentee => mentee.id === Number(e.target.value)) || null)}
           />
+          {error && <Message mt={1} error>No Mentee selected</Message>}
         </FormControl>
       </TaskDialog>
       <ListTable
