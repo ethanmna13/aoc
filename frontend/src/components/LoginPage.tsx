@@ -1,7 +1,7 @@
-import { Button, CardBase, FloatingMessageBlock, FormControl, Message, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
+import { Button, CardBase, FloatingMessageBlock, FormControl, PageTitle, Paragraph, TextField } from "@freee_jp/vibes";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../features/auth/authSlice";
+import { login, clearError } from "../features/auth/authSlice";
 import { RootState, AppDispatch } from "../app/store";
 import { useNavigate } from "react-router-dom"; 
 import likhalogo from "../assets/images/header_likhait-freee-logo.png";
@@ -16,6 +16,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    dispatch(clearError());
     const role = await dispatch(login(email, password));
 
     if (role) {
@@ -47,33 +48,24 @@ const LoginPage = () => {
             id="email"
             width="large"
             type="email"
-            error={!email}
             required={true}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <div>
-          {error && <Message mt={0.5} error>Invalid/Empty Email</Message>}
-          </div>
         </FormControl>
         <FormControl label="Password" marginLeft required>
           <TextField 
             id="password"
             width="large"
             type="password"
-            error={!password}
             required={true}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <div>
-          {error && <Message mt={0.5} error>Invalid Password</Message>}
-          </div>
         </FormControl>
         <div className="button-container">
           <Button onClick={handleSubmit} appearance="primary" width="default">
             Log in
           </Button>
         </div>
-        {error && <Message ma={1} error>Invalid login credentials</Message>}
       </CardBase>
     </div>
   );

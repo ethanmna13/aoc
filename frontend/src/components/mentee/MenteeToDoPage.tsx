@@ -88,7 +88,7 @@ import {
     const [currentUser, setCurrentUser] = useState<CustomJwtPayload | null>(null);
     const [error, setError] = useState<string>("");
     const [successMessage, setSuccessMessage] = useState<string>("");
-    const [mentorships, setMentorships] = useState<Mentorship[]>([]);
+    const [, setMentorships] = useState<Mentorship[]>([]);
     const [assignedSubTasks, setAssignedSubTasks] = useState<AssignedSubTask[]>([]);
     const [assignedMainTasks, setAssignedMainTasks] = useState<AssignedMainTask[]>([]);
     const [, setIsModalOpen] = useState(false);
@@ -216,52 +216,6 @@ import {
       }
     };
   
-    const calculateMentorshipStatus = (mentorship: Mentorship) => {
-        const menteeMainTasks = assignedMainTasks.filter(
-          (task) => task.mentorships_id === mentorship.id
-        );
-        const menteeSubTasks = assignedSubTasks.filter(
-          (task) => task.mentorships_id === mentorship.id
-        );
-      
-        const allTasks = [...menteeMainTasks, ...menteeSubTasks];
-      
-        if (allTasks.length === 0) {
-          return "";
-        }
-      
-        const hasPendingTasks = allTasks.some((task) => task.status === "not_started");
-        const hasInProgressTasks = allTasks.some((task) => task.status === "in_progress");
-        const allTasksCompleted = allTasks.every((task) => task.status === "completed");
-      
-        if (allTasksCompleted) {
-          return "Completed";
-        } else if (hasInProgressTasks) {
-          return "In Progress";
-        } else if (hasPendingTasks) {
-          return "Not Started";
-        }
-      
-        return "Not Started";
-      };
-      
-      const calculateMentorshipCounts = () => {
-        const menteeMentorships = mentorships.filter((mentorship) => mentorship.mentee_id === currentUser?.sub);
-      
-        const pendingMentorships = menteeMentorships.filter(
-          (mentorship) => calculateMentorshipStatus(mentorship) === "Not Started"
-        ).length;
-        const inProgressMentorships = menteeMentorships.filter(
-          (mentorship) => calculateMentorshipStatus(mentorship) === "In Progress"
-        ).length;
-        const completedMentorships = menteeMentorships.filter(
-          (mentorship) => calculateMentorshipStatus(mentorship) === "Completed"
-        ).length;
-      
-        return { pendingMentorships, inProgressMentorships, completedMentorships };
-      };
-      
-      const { pendingMentorships, inProgressMentorships, completedMentorships } = calculateMentorshipCounts();
   
     const handleSearchChecklistTitle = (value: string) => {
       setSearchChecklistTitle(value);
@@ -406,7 +360,7 @@ import {
     };
   
     const handleConfirmSubTaskCompletion = async () => {
-        if (!selectedSubTask) return;
+      if (!selectedMainTask || !selectedSubTask) return;
       
         try {
           const payload = {
@@ -426,14 +380,31 @@ import {
               },
             }
           );
+
+          if (selectedMainTask.status === "not_started") {
+            const mainTaskPayload = {
+              assigned_main_task: {
+                status: "in_progress",
+              },
+            };
+      
+            await axios.put(
+              `http://localhost:3000/api/v1/assigned_main_tasks/${selectedMainTask.id}`,
+              mainTaskPayload,
+              {
+                withCredentials: true,
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          }
       
           setSuccessMessage("Sub task marked as completed successfully");
           setTimeout(() => setSuccessMessage(""), 3000);
-      
-          if (selectedMainTask) {
-            await fetchAssignedMainTasks(searchChecklistTitle, currentPage);
-          }
-      
+          fetchAssignedSubTasks(selectedMainTask.id);
+          fetchAssignedMainTasks(searchChecklistTitle, currentPage);
           setIsConfirmSubTaskDialogOpen(false);
         } catch (err) {
           console.error("Failed to update sub task status:", err);
@@ -469,7 +440,7 @@ import {
         }
   
         await fetchMentorships();
-  
+        fetchAssignedMainTasks(searchChecklistTitle, currentPage);
         setIsConfirmMainTaskDialogOpen(false);
       } catch (err) {
         console.error("Failed to update main task status:", err);
@@ -479,28 +450,8 @@ import {
   
     const assignedMainTaskRows = assignedMainTasks.map((task) => {
         const hasSubTasks = assignedSubTasks.some((subTask) => subTask.assigned_main_tasks_id === task.id);
-        const allSubTasksCompleted = assignedSubTasks
-          .filter((subTask) => subTask.assigned_main_tasks_id === task.id)
-          .every((subTask) => subTask.status === "completed");
       
-        let status;
-        if (!hasSubTasks) {
-          status = task.status === "completed" ? "Completed" : "Not Started";
-        } else {
-          if (allSubTasksCompleted) {
-            status = "Completed";
-          } else if (
-            assignedSubTasks.some(
-              (subTask) => subTask.assigned_main_tasks_id === task.id && subTask.status === "in_progress"
-            )
-          ) {
-            status = "In Progress";
-          } else {
-            status = "Not Started";
-          }
-        }
-      
-        const isCompleted = status === "Completed";
+        const isCompleted = task.status === "completed";
         const completionDate = isCompleted
           ? new Date(task.updated_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
           : null;
@@ -519,17 +470,17 @@ import {
             {
               value: (
                 <div>
-                  {status === "Not Started" && (
+                  {task.status === "not_started" && (
                     <StatusIcon mt={0.5} ml={1} type="done" marginRight marginBottom>
                       Not Started
                     </StatusIcon>
                   )}
-                  {status === "In Progress" && (
+                  {task.status === "in_progress" && (
                     <StatusIcon mt={0.5} ml={1} type="progress" marginRight marginBottom>
                       In Progress
                     </StatusIcon>
                   )}
-                  {status === "Completed" && (
+                  {task.status === "completed" && (
                     <StatusIcon mt={0.5} ml={1} type="emphasis" marginRight marginBottom>
                       Completed
                     </StatusIcon>
@@ -563,7 +514,22 @@ import {
             },
             {
               value: isCompleted ? (
-                <div>Completed on: {completionDate}</div>
+                <div>
+              Completed on: {completionDate}
+              {hasSubTasks && (
+                <Button
+                  onClick={() => {
+                    setSelectedMainTask(task);
+                    fetchAssignedSubTasks(task.id);
+                    setIsSubTaskModalOpen(true);
+                  }}
+                  small
+                  ml={2}
+                >
+                  View Sub Tasks
+                </Button>
+              )}
+            </div>
               ) : (
                 <div>
                   {hasSubTasks ? (
@@ -621,19 +587,25 @@ import {
         <GridWrapper marginTop>
           <GridBlock size="oneThird">
             <CardBase marginLeft>
-              <SubSectionTitle textAlign="left">{inProgressMentorships}</SubSectionTitle>
+              <SubSectionTitle textAlign="left">
+                {assignedMainTasks.filter((task) => task.status === "in_progress").length}
+              </SubSectionTitle>
               <StatusIcon type="progress">In Progress</StatusIcon>
             </CardBase>
           </GridBlock>
           <GridBlock size="oneThird">
             <CardBase>
-              <SubSectionTitle textAlign="left">{completedMentorships}</SubSectionTitle>
+              <SubSectionTitle textAlign="left">
+                {assignedMainTasks.filter((task) => task.status === "completed").length}
+              </SubSectionTitle>
               <StatusIcon type="emphasis">Completed</StatusIcon>
             </CardBase>
           </GridBlock>
           <GridBlock size="oneThird">
             <CardBase marginRight>
-              <SubSectionTitle textAlign="left">{pendingMentorships}</SubSectionTitle>
+              <SubSectionTitle textAlign="left">
+                {assignedMainTasks.filter((task) => task.status === "not_started").length}
+              </SubSectionTitle>
               <StatusIcon type="done">Not Started</StatusIcon>
             </CardBase>
           </GridBlock>
@@ -727,7 +699,17 @@ import {
                     ),
                   },
                   { value: task.sub_task_description || "N/A" },
-                  { value: new Date(task.sub_task_deadline).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) || "N/A" },
+                  {
+                    value: task.sub_task_deadline ? (
+                      new Date(task.sub_task_deadline).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    ) : (
+                      "N/A" 
+                    ),
+                  },
                   {
                     value: (
                       <div>

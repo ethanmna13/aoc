@@ -52,6 +52,7 @@ const AdminUsersPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isSearching] = useState<boolean>(false);
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -125,6 +126,7 @@ const AdminUsersPage = () => {
   };
   
   const handleRegister = async () => {
+    setIsFormSubmitted(true);
     try {
       const token = localStorage.getItem('authToken');
       await axios.post("http://localhost:3000/api/v1/admin/users", registerUser, {
@@ -148,6 +150,7 @@ const AdminUsersPage = () => {
   };
 
   const handleUpdate = async () => {
+    setIsFormSubmitted(true);
     if (!editUser) return;
     try {
       const token = localStorage.getItem('authToken');
@@ -263,7 +266,10 @@ const AdminUsersPage = () => {
           id="register-user-dialog" 
           isOpen={isOpen} 
           title="Register A User" 
-          onRequestClose={toggle} 
+          onRequestClose={() => {
+            setOpen(false);
+            setIsFormSubmitted(false);
+          }}
           closeButtonLabel="Cancel" 
           primaryButtonLabel="Register" 
           danger={false} 
@@ -274,24 +280,24 @@ const AdminUsersPage = () => {
           <FormControl label="Name" fieldId="name" required>
             <TextField width="full" required id="name" maxLength={30}
               type="text"
-              error={!registerUser.name}
+              error={isFormSubmitted && !registerUser.name}
               value={registerUser.name}
               onChange={(e) =>
                 setRegisterUser({ ...registerUser, name: e.target.value })
               }
             />
-            {error && <Message mt={1} error>Invalid/Empty Name</Message>}
+            {isFormSubmitted && !registerUser.name && <Message mt={1} error>Invalid/Empty Name</Message>}
           </FormControl>
           <FormControl label="Email" fieldId="email" required>
             <TextField width="full" maxLength={20}
               type="email"
-              error={!registerUser.email}
+              error={isFormSubmitted && !registerUser.email}
               value={registerUser.email}
               onChange={(e) =>
                 setRegisterUser({ ...registerUser, email: e.target.value })
               }
             />
-            {error && <Message mt={1} error>Invalid/Empty Email</Message>}
+            {isFormSubmitted && !registerUser.email && <Message mt={1} error>Invalid/Empty Email</Message>}
           </FormControl>
           <FormControl label="Role" fieldId="role">
             <SelectBox width="full"
@@ -312,7 +318,10 @@ const AdminUsersPage = () => {
             id="edit-user-dialog"
             isOpen={Boolean(editUser)}
             title="Edit User"
-            onRequestClose={() => setEditUser(null)}
+            onRequestClose={() => {
+              setIsFormSubmitted(false);
+              setEditUser(null);
+            }}
             closeButtonLabel="Cancel"
             primaryButtonLabel="Save"
             onPrimaryAction={handleUpdate}
@@ -322,22 +331,22 @@ const AdminUsersPage = () => {
             <FormControl label="Name" fieldId="edit-name" required>
               <TextField width="full" required maxLength={30}
                 type="text"
-                error={!editUser.name}
+                error={isFormSubmitted && !editUser.name}
                 value={editUser.name}
                 onChange={(e) =>
                   setEditUser({ ...editUser, name: e.target.value })
                 }
               />
-              {error && <Message mt={1} error>Invalid/Empty Name</Message>}
+              {isFormSubmitted && !editUser.name && <Message mt={1} error>Name is blank</Message>}
             </FormControl>
             <FormControl label="Role" fieldId="edit-role">
               <SelectBox width="full"
                 id="edit-role"
                 name="role"
                 options={[
-                  { name: 'Admin', value: '0' }, 
-                  { name: 'Mentor', value: '1' }, 
-                  { name: 'Mentee', value: '2' } 
+                  { name: 'Admin', value: 'admin' }, 
+                  { name: 'Mentor', value: 'mentor' }, 
+                  { name: 'Mentee', value: 'mentee' } 
                 ]}
                 onChange={(e) => setEditUser({ ...editUser, role: Number(e.target.value) })}
               />

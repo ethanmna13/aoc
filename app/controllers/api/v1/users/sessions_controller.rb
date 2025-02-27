@@ -1,6 +1,6 @@
 class Api::V1::Users::SessionsController < Devise::SessionsController
   respond_to :json
-  before_action :set_current_user, only: [ :index ]
+  skip_before_action :verify_signed_out_user, only: [ :destroy ]
 
   def create
     user = User.find_by(email: params[:user][:email])
@@ -13,16 +13,12 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
       token = user.generate_jwt
       render json: {
         message: "Logged in successfully",
-        user: UserBlueprint.render_as_hash(user),
+        user: SessionBlueprint.render_as_hash(user),
         token: token
       }, status: :ok
     else
       render json: { error: "Invalid email or password" }, status: :unauthorized
     end
-  end
-
-  def index
-    render json: UserBlueprint.render_as_hash(current_user), status: :ok
   end
 
   def destroy

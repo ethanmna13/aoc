@@ -65,6 +65,7 @@ class Api::V1::AssignedSubTasksController < ApplicationController
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
+
   def update
     assigned_sub_task = AssignedSubTask.find(params[:id])
 
@@ -96,7 +97,7 @@ class Api::V1::AssignedSubTasksController < ApplicationController
     assigned_sub_task = AssignedSubTask.find(params[:id])
     assigned_sub_task.destroy
     render json: { message: "Assigned sub task deleted successfully" }, status: :ok
-  rescue ActiveRecord::RecordNotFound => e
+  rescue ActiveRecord::RecordNotFound
     render json: { error: "Assigned sub task not found" }, status: :not_found
   end
 

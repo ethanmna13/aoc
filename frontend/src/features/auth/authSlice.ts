@@ -35,10 +35,13 @@ const authSlice = createSlice({
       state.token = null;
       state.error = null;
     },
+    clearError(state) {
+      state.error = null; 
+    },
   },
 });
 
-export const { loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { loginSuccess, loginFailure, logout, clearError } = authSlice.actions;
 
 export default authSlice.reducer;
 
@@ -61,7 +64,12 @@ export const login = (email: string, password: string): AppThunk<Promise<string 
       const decoded = jwtDecode<CustomJwtPayload>(token);
       return decoded.role.trim().toLowerCase();
     }
-  } catch {
-    dispatch(loginFailure("There was an error logging you in. Please try again."));
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.error || "There was an error logging you in. Please try again.";
+      dispatch(loginFailure(errorMessage));
+    } else {
+      dispatch(loginFailure("An unexpected error occurred. Please try again."));
+    }
   }
 };
