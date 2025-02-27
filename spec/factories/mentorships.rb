@@ -1,8 +1,6 @@
 FactoryBot.define do
   factory :mentorship do
-    mentors { nil }
-    mentees { nil }
-    status { "MyString" }
-    submissions { nil }
+    mentor_id { create(:user, role: :mentor).id }
+    mentee_id { create(:user, role: :mentee).id }
   end
 end
