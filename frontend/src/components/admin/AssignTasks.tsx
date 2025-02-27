@@ -111,7 +111,9 @@ const AssignTasksPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
   const token = localStorage.getItem('authToken');
+
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -234,6 +236,7 @@ const AssignTasksPage = () => {
   };
 
   const handleAssignTasks = async () => {
+    setIsFormSubmitted(true);
     if (!selectedMainTask || !selectedMentee) {
       setError("Please select both a main task and a mentee");
       return;
@@ -473,7 +476,10 @@ const AssignTasksPage = () => {
         id="assign-tasks"
         isOpen={isAssignOpen}
         title="Assign Tasks"
-        onRequestClose={() => setAssignOpen(false)}
+        onRequestClose={() => {
+          setIsFormSubmitted(false);
+          setAssignOpen(false)
+        }}
         closeButtonLabel="Close"
         primaryButtonLabel="Save"
         onPrimaryAction={handleAssignTasks}
@@ -483,27 +489,33 @@ const AssignTasksPage = () => {
           <SelectBox width="full"
             id="selectBox-1"
             name="mainTask"
-            error={!selectedMainTask?.id}
-            options={mainTasks.map(mainTask => ({
+            error={isFormSubmitted && !selectedMainTask?.id}
+            options={[
+              { name: "Choose a Checklist", value: "" },
+              ...mainTasks.map(mainTask => ({
               name: mainTask.name,
-              value: mainTask.id?.toString() ?? ''
-            }))}
+              value: mainTask.id?.toString()
+            }))
+          ]}
             onChange={e => setSelectedMainTask(mainTasks.find(mainTask => mainTask.id === Number(e.target.value)) || null)}
           />
-          {error && <Message mt={1} error>No Checklist selected</Message>}
+          {isFormSubmitted && !selectedMainTask?.id && <Message mt={1} error>No Checklist selected</Message>}
         </FormControl>
         <FormControl label="Select a Mentee" fieldId="selectBox-2" required>
           <SelectBox width="full"
             id="selectBox-2"
             name="mentee"
-            error={!selectedMentee}
-            options={mentees.map(mentee => ({
+            error={isFormSubmitted && !selectedMentee}
+            options={[
+              { name: "Choose a mentee", value: "" },
+              ...mentees.map(mentee => ({
               name: mentee.name,
-              value: mentee.id?.toString() ?? ''
-            }))}
+              value: mentee.id?.toString()
+            }))
+          ]}
             onChange={e => setSelectedMentee(mentees.find(mentee => mentee.id === Number(e.target.value)) || null)}
           />
-          {error && <Message mt={1} error>No Mentee selected</Message>}
+          {isFormSubmitted && !selectedMentee && <Message mt={1} error>No Mentee selected</Message>}
         </FormControl>
       </TaskDialog>
       <ListTable

@@ -33,13 +33,14 @@ class User < ApplicationRecord
       name: name,
       role: role,
       account_status: account_status,
+      jti: self.jti,
       exp: 1.day.from_now.to_i
     }
     JWT.encode(payload, ENV["DEVISE_JWT_SECRET_KEY"], "HS256")
   end
 
   def jwt_payload
-    self.jti = self.class.generate_jti
+    self.jti ||= SecureRandom.uuid
     self.save
     super.merge({
       jti: self.jti,

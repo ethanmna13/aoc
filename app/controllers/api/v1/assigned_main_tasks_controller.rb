@@ -8,7 +8,23 @@ class Api::V1::AssignedMainTasksController < ApplicationController
       status_value = AssignedMainTask.statuses[params[:q][:status_eq]]
       params[:q][:status_eq] = status_value if status_value
     end
-    @q = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user).ransack(params[:q])
+
+    query_params = params[:q] || {}
+
+    case current_user.role
+    when "admin"
+    when "mentor"
+      query_params[:mentorship_mentor_id_eq] = current_user.id
+    when "mentee"
+      query_params[:mentorship_mentee_id_eq] = current_user.id
+    else
+      render json: { error: "Unauthorized role" }, status: :unauthorized
+      return
+    end
+
+    @q = AssignedMainTask.includes(mentorship: [ :mentor, :mentee ], main_task: :user)
+                         .ransack(query_params)
+
     assigned_main_tasks = @q.result(distinct: true).paginate(page: params[:page], per_page: params[:per_page] || 10)
 
     assigned_main_tasks_with_details = assigned_main_tasks.map do |task|

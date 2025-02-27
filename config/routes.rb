@@ -2,9 +2,11 @@ Rails.application.routes.draw do
   devise_for :users
   namespace :api do
     namespace :v1 do
-      devise_for :users,  controllers: {
-        sessions: "api/v1/users/sessions"
-      }
+      devise_scope :user do
+        post "users/sign_in", to: "users/sessions#create", as: :user_session
+        delete "users/sign_out", to: "users/sessions#destroy", as: :destroy_user_session
+        get "users/sessions", to: "users/sessions#index", as: :user_sessions
+      end
       resources :assigned_main_tasks do
         resources :assigned_sub_tasks
       end

@@ -163,10 +163,10 @@ import {
             per_page: 10,
           },
         });
-  
+    
         const assignedMainTasks = response.data.assigned_main_tasks || [];
         setAssignedMainTasks(assignedMainTasks);
-  
+    
         const subTasksPromises = assignedMainTasks.map(async (task: AssignedMainTask) => {
           const subTasksResponse = await axios.get(
             `http://localhost:3000/api/v1/assigned_main_tasks/${task.id}/assigned_sub_tasks`,
@@ -177,11 +177,11 @@ import {
           );
           return subTasksResponse.data;
         });
-  
+    
         const subTasksResults = await Promise.all(subTasksPromises);
         const allSubTasks = subTasksResults.flat();
         setAssignedSubTasks(allSubTasks);
-  
+    
         setTotalPages(response.data.total_pages || 1);
       } catch {
         setError("Failed to fetch assigned main tasks");
@@ -219,51 +219,51 @@ import {
     };
   
     const calculateMentorshipStatus = (mentorship: Mentorship) => {
-        const mentorMainTasks = assignedMainTasks.filter(
-          (task) => task.mentorships_id === mentorship.id
-        );
-        const mentorSubTasks = assignedSubTasks.filter(
-          (task) => task.mentorships_id === mentorship.id
-        );
-      
-        const allTasks = [...mentorMainTasks, ...mentorSubTasks];
-      
-        if (allTasks.length === 0) {
-          return "";
-        }
-      
-        const hasPendingTasks = allTasks.some((task) => task.status === "not_started");
-        const hasInProgressTasks = allTasks.some((task) => task.status === "in_progress");
-        const allTasksCompleted = allTasks.every((task) => task.status === "completed");
-      
-        if (allTasksCompleted) {
-          return "Completed";
-        } else if (hasInProgressTasks) {
-          return "In Progress";
-        } else if (hasPendingTasks) {
-          return "Not Started";
-        }
-      
+      const mentorMainTasks = assignedMainTasks.filter(
+        (task) => task.mentorships_id === mentorship.id
+      );
+      const mentorSubTasks = assignedSubTasks.filter(
+        (task) => task.mentorships_id === mentorship.id
+      );
+    
+      const allTasks = [...mentorMainTasks, ...mentorSubTasks];
+    
+      if (allTasks.length === 0) {
+        return "";
+      }
+    
+      const hasPendingTasks = allTasks.every((task) => task.status === "not_started");
+      const hasInProgressTasks = allTasks.some((task) => task.status === "in_progress" || task.status == "not_started");
+      const allTasksCompleted = allTasks.every((task) => task.status === "completed");
+    
+      if (allTasksCompleted) {
+        return "Completed";
+      } else if (hasInProgressTasks) {
+        return "In Progress";
+      } else if (hasPendingTasks) {
         return "Not Started";
-      };
-  
-      const calculateMentorshipCounts = () => {
-        const mentorMentorships = mentorships.filter((mentorship) => mentorship.mentor_id === currentUser?.sub);
-      
-        const pendingMentorships = mentorMentorships.filter(
-          (mentorship) => calculateMentorshipStatus(mentorship) === "Not Started"
-        ).length;
-        const inProgressMentorships = mentorMentorships.filter(
-          (mentorship) => calculateMentorshipStatus(mentorship) === "In Progress"
-        ).length;
-        const completedMentorships = mentorMentorships.filter(
-          (mentorship) => calculateMentorshipStatus(mentorship) === "Completed"
-        ).length;
-      
-        return { pendingMentorships, inProgressMentorships, completedMentorships };
-      };
-      
-      const { pendingMentorships, inProgressMentorships, completedMentorships } = calculateMentorshipCounts();
+      }
+    
+      return "Not Started";
+    };
+    
+    const calculateMentorshipCounts = () => {
+      const mentorMentorships = mentorships.filter((mentorship) => mentorship.mentor_id === currentUser?.sub);
+    
+      const pendingMentorships = mentorMentorships.filter(
+        (mentorship) => calculateMentorshipStatus(mentorship) === "Not Started"
+      ).length;
+      const inProgressMentorships = mentorMentorships.filter(
+        (mentorship) => calculateMentorshipStatus(mentorship) === "In Progress"
+      ).length;
+      const completedMentorships = mentorMentorships.filter(
+        (mentorship) => calculateMentorshipStatus(mentorship) === "Completed"
+      ).length;
+    
+      return { pendingMentorships, inProgressMentorships, completedMentorships };
+    };
+    
+    const { pendingMentorships, inProgressMentorships, completedMentorships } = calculateMentorshipCounts();
   
     const handleSearchMenteeName = (value: string) => {
       setSearchMenteeName(value);
@@ -403,7 +403,6 @@ import {
   
         setSuccessMessage("Submissions updated successfully");
         setTimeout(() => setSuccessMessage(""), 3000);
-  
         fetchAssignedSubTasks(selectedMainTask.id);
         setNewSubmissionFiles([]);
         setIsSubTaskSubmissionDialogOpen(false);
@@ -414,7 +413,7 @@ import {
     };
   
     const handleConfirmSubTaskCompletion = async () => {
-      if (!selectedSubTask) return;
+      if (!selectedMainTask || !selectedSubTask) return;
   
       try {
         const payload = {
@@ -434,15 +433,31 @@ import {
             },
           }
         );
+
+        if (selectedMainTask.status === "not_started") {
+          const mainTaskPayload = {
+            assigned_main_task: {
+              status: "in_progress",
+            },
+          };
+    
+          await axios.put(
+            `http://localhost:3000/api/v1/assigned_main_tasks/${selectedMainTask.id}`,
+            mainTaskPayload,
+            {
+              withCredentials: true,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
   
         setSuccessMessage("Sub task marked as completed successfully");
         setTimeout(() => setSuccessMessage(""), 3000);
-  
-        if (selectedMainTask) {
-          await fetchAssignedSubTasks(selectedMainTask.id);
-          await fetchAssignedMainTasks(searchMenteeName, searchChecklistTitle, currentPage)
-        }
-  
+        fetchAssignedSubTasks(selectedMainTask.id);
+        calculateMentorshipCounts();
         setIsConfirmSubTaskDialogOpen(false);
       } catch (err) {
         console.error("Failed to update sub task status:", err);
@@ -478,7 +493,8 @@ import {
         }
   
         await fetchMentorships();
-  
+        fetchAssignedMainTasks(searchMenteeName, searchChecklistTitle, currentPage);
+        calculateMentorshipCounts();
         setIsConfirmMainTaskDialogOpen(false);
       } catch (err) {
         console.error("Failed to update main task status:", err);
@@ -500,7 +516,7 @@ import {
           status = "Completed";
         } else if (
           assignedSubTasks.some(
-            (subTask) => subTask.assigned_main_tasks_id === task.id && subTask.status === "in_progress"
+            (subTask) => subTask.assigned_main_tasks_id === task.id && subTask.status === "in_progress" || subTask.status == "not_started"
           )
         ) {
           status = "In Progress";
@@ -572,7 +588,22 @@ import {
           },
           {
             value: isCompleted ? (
-              <div>Completed on: {completionDate}</div>
+              <div>
+              Completed on: {completionDate}
+              {hasSubTasks && (
+                <Button
+                  onClick={() => {
+                    setSelectedMainTask(task);
+                    fetchAssignedSubTasks(task.id);
+                    setIsSubTaskModalOpen(true);
+                  }}
+                  small
+                  ml={2}
+                >
+                  View Sub Tasks
+                </Button>
+              )}
+            </div>
             ) : (
               <div>
                 {hasSubTasks ? (
@@ -747,7 +778,17 @@ import {
                     ),
                   },
                   { value: task.sub_task_description || "N/A" },
-                  { value: new Date(task.sub_task_deadline).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) || "N/A" },
+                  {
+                    value: task.sub_task_deadline ? (
+                      new Date(task.sub_task_deadline).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    ) : (
+                      "N/A" 
+                    ),
+                  },
                   {
                     value: (
                       <div>

@@ -60,6 +60,7 @@ const MentorshipPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
   const token = localStorage.getItem('authToken');
 
   useEffect(() => {
@@ -146,6 +147,7 @@ const MentorshipPage = () => {
   };
 
   const handleCreateMentorship = async () => {
+    setIsFormSubmitted(true);
     if (!createMentorship.mentorID || !createMentorship.menteeID) {
       setError("Please select both a mentor and a mentee");
       return;
@@ -193,6 +195,7 @@ const MentorshipPage = () => {
 
   const handleAssignClick = () => {
     setCreateMentorship({ mentorID: null, menteeID: null });
+    setIsFormSubmitted(false);
     setAssignOpen(true); 
   };
 
@@ -236,7 +239,10 @@ const MentorshipPage = () => {
           id="assign-mentorships"
           isOpen={isAssignOpen}
           title="Assign a Mentor to a Mentee"
-          onRequestClose={() => setAssignOpen(false)}
+          onRequestClose={() => {
+            setAssignOpen(false);
+            setIsFormSubmitted(false);
+          }}
           closeButtonLabel="Close"
           primaryButtonLabel="Save"
           onPrimaryAction={handleCreateMentorship}
@@ -246,27 +252,33 @@ const MentorshipPage = () => {
             <SelectBox width="full"
               id="selectBox-1"
               name="mentor"
-              error={!createMentorship.mentorID}
-              options={mentors.map(mentor => ({
-                name: mentor.name,
-                value: mentor.id?.toString()
-              }))}
+              error={isFormSubmitted && !createMentorship.mentorID}
+              options={[
+                { name: "Choose a mentor", value: "" },
+                ...mentors.map(mentor => ({
+                  name: mentor.name,
+                  value: mentor.id?.toString()
+                }))
+              ]}
               onChange={e => setCreateMentorship({ ...createMentorship, mentorID: Number(e.target.value) })}
             />
-            {error && <Message mt={1} error>No Mentor selected</Message>}
+            {isFormSubmitted && !createMentorship.mentorID && <Message mt={1} error>No Mentor selected</Message>}
           </FormControl>
           <FormControl label="Select a Mentee" fieldId="selectBox-2" required>
             <SelectBox width="full"
               id="selectBox-2"
               name="mentee"
-              error={!createMentorship.menteeID}
-              options={mentees.map(mentee => ({
-                name: mentee.name,
-                value: mentee.id?.toString() ?? ''
-              }))}
+              error={isFormSubmitted && !createMentorship.menteeID}
+              options={[
+                { name: "Choose a mentee", value: "" },
+                ...mentees.map(mentee => ({
+                  name: mentee.name,
+                  value: mentee.id?.toString()
+                }))
+              ]}
               onChange={e => setCreateMentorship({ ...createMentorship, menteeID: Number(e.target.value) })}
             />
-            {error && <Message mt={1} error>No Mentee selected</Message>}
+            {isFormSubmitted && !createMentorship.menteeID && <Message mt={1} error>No Mentee selected</Message>}
           </FormControl>
         </TaskDialog>
         <TaskDialog 

@@ -86,6 +86,7 @@ const AdminMainTasks = () => {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -171,6 +172,7 @@ const AdminMainTasks = () => {
   };
 
   const handleCreate = async () => {
+    setIsFormSubmitted(true);
     if (!createTask || !currentUser) return;
   
     const formData = new FormData();
@@ -204,6 +206,7 @@ const AdminMainTasks = () => {
   };
   
   const handleUpdate = async () => {
+    setIsFormSubmitted(true);
     if (!editTask) return;
   
     const formData = new FormData();
@@ -298,6 +301,7 @@ const AdminMainTasks = () => {
   };
 
   const handleCreateSubTask = async () => {
+    setIsFormSubmitted(true);
     if (!createSubTask || !selectedMainTask?.id || !currentUser) {
       setError("User not logged in or invalid user ID");
       return;
@@ -337,6 +341,7 @@ const AdminMainTasks = () => {
   };
   
   const handleUpdateSubTask = async () => {
+    setIsFormSubmitted(true);
     if (!editSubTask || !selectedMainTask?.id || !editSubTask.id) return;
   
     const formData = new FormData();
@@ -507,7 +512,10 @@ const AdminMainTasks = () => {
           id="create-task-dialog"
           isOpen={Boolean(createTask)}
           title="New Main Task"
-          onRequestClose={() => setCreateTask(null)}
+          onRequestClose={() => {
+            setCreateTask(null);
+            setIsFormSubmitted(false);
+          }}
           closeButtonLabel="Close"
           primaryButtonLabel="Save"
           onPrimaryAction={handleCreate}
@@ -516,13 +524,13 @@ const AdminMainTasks = () => {
           <FormControl label="Title" fieldId="name" required>
             <TextField width="full" maxLength={30}
               type="text"
-              error={!createTask.name}
+              error={isFormSubmitted && !createTask.name}
               value={createTask.name}
               onChange={(e) =>
                 setCreateTask({ ...createTask, name: e.target.value })
               }
             />
-            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
+            {isFormSubmitted && !createTask.name && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="description">
             <TextArea width="full" maxLength={100}
@@ -579,7 +587,10 @@ const AdminMainTasks = () => {
           id="edit-task-dialog"
           isOpen={Boolean(editTask)}
           title={`Edit ${selectedMainTask?.name}`}
-          onRequestClose={() => setEditTask(null)}
+          onRequestClose={() => {
+            setIsFormSubmitted(false);
+            setEditTask(null)
+          }}
           closeButtonLabel="Cancel"
           primaryButtonLabel="Save"
           onPrimaryAction={handleUpdate}
@@ -588,13 +599,13 @@ const AdminMainTasks = () => {
           <FormControl label="Title" fieldId="edit-name" required>
             <TextField maxLength={25}
               type="text"
-              error={!editTask.name}
+              error={isFormSubmitted && !editTask.name}
               value={editTask.name}
               onChange={(e) =>
                 setEditTask({ ...editTask, name: e.target.value })
               }
             />
-            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
+            {isFormSubmitted && !editTask.name && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="edit-description">
             <TextArea maxLength={100}
@@ -778,7 +789,10 @@ const AdminMainTasks = () => {
         id="create-sub-task-dialog"
         isOpen={Boolean(createSubTask)}
         title={`New Sub Task for ${selectedMainTask?.name}`}
-        onRequestClose={() => setCreateSubTask(null)}
+        onRequestClose={() => {
+          setIsFormSubmitted(false);
+          setCreateSubTask(null)
+        }}
         closeButtonLabel="Close"
         primaryButtonLabel="Save"
         onPrimaryAction={handleCreateSubTask}
@@ -787,13 +801,13 @@ const AdminMainTasks = () => {
           <FormControl label="Title" fieldId="sub-task-name" required>
             <TextField width="full" maxLength={30}
               type="text"
-              error={!createSubTask.name}
+              error={isFormSubmitted && !createSubTask.name}
               value={createSubTask.name}
               onChange={(e) =>
                 setCreateSubTask({ ...createSubTask, name: e.target.value })
               }
             />
-            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
+            {isFormSubmitted && !createSubTask.name && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="sub-task-description">
             <TextArea width="full" maxLength={100}
@@ -847,7 +861,10 @@ const AdminMainTasks = () => {
           id="edit-sub-task-modal"
           isOpen={Boolean(editSubTask)}
           title={`Edit ${editSubTask.name}`}
-          onRequestClose={() => setEditSubTask(null)}
+          onRequestClose={() => {
+            setIsFormSubmitted(false);
+            setEditSubTask(null)
+          }}
           closeButtonLabel="Close"
           primaryButtonLabel="Save"
           onPrimaryAction={handleUpdateSubTask}
@@ -856,13 +873,13 @@ const AdminMainTasks = () => {
           <FormControl label="Title" fieldId="edit-sub-task-name" required>
             <TextField width="full" maxLength={30}
               type="text"
-              error={!editSubTask.name}
+              error={isFormSubmitted && !editSubTask.name}
               value={editSubTask.name}
               onChange={(e) =>
                 setEditSubTask({ ...editSubTask, name: e.target.value })
               }
             />
-            {error && <Message mt={1} error>Invalid/Empty Title</Message>}
+            {isFormSubmitted && !editSubTask.name && <Message mt={1} error>Invalid/Empty Title</Message>}
           </FormControl>
           <FormControl label="Description" fieldId="edit-sub-task-description">
             <TextArea width="full" maxLength={100}

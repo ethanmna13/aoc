@@ -5,7 +5,7 @@ class Mentorship < ApplicationRecord
   has_many :assigned_sub_task, foreign_key: "mentorships_id"
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[created_at updated_at]
+    %w[created_at updated_at mentor_id]
   end
 
   def self.ransackable_associations(auth_object = nil)
