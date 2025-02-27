@@ -5,6 +5,7 @@ class MainTask < ApplicationRecord
   has_many_attached :attachments
 
   validates :name, presence: true
+  validates :users_id, presence: true
 
   def self.ransackable_attributes(auth_object = nil)
     %w[name users_id]

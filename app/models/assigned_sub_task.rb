@@ -5,6 +5,11 @@ class AssignedSubTask < ApplicationRecord
   belongs_to :sub_task, class_name: "SubTask", foreign_key: "sub_task_id"
   has_many_attached :submissions
 
+  validates :mentorships_id, presence: true
+  validates :assigned_main_tasks_id, presence: true
+  validates :sub_task_id, presence: true
+  validates :status, presence: true
+
   def self.ransackable_attributes(auth_object = nil)
     %w[id sub_tasks_id mentorships_id status created_at updated_at assigned_main_tasks_id]
   end
