@@ -437,7 +437,7 @@ import {
         if (selectedMainTask.status === "not_started") {
           const mainTaskPayload = {
             assigned_main_task: {
-              status: "in_progress",
+              status: "completed",
             },
           };
     
