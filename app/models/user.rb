@@ -48,6 +48,10 @@ class User < ApplicationRecord
     })
   end
 
+  def revoke_jwt
+    self.update(jti: SecureRandom.uuid)
+  end
+
   def self.ransackable_associations(auth_object = nil)
     %w[main_tasks sub_tasks mentorships_as_mentor mentorships_as_mentee]
   end
