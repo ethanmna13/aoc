@@ -48,7 +48,7 @@ gem "rack-cors"
 
 gem "devise-jwt", "~> 0.9.0"
 
-gem "dry-configurable", "0.13.0"
+gem "dry-configurable", "1.3.0"
 
 gem "blueprinter"
 
